@@ -1,5 +1,5 @@
 # ==========================================
-# CarMatrix API — Main Entry Point with Auto-Migration
+# CarMatrix API — Main Entry Point with Auto-Migration & Orders
 # ==========================================
 
 from fastapi import FastAPI
@@ -17,13 +17,14 @@ from app.routers import (
     inventory_router,
     users_router,
     sales_router,
+    orders_router,
 )
 
 
 app = FastAPI(
     title=settings.APP_NAME,
     description="CarMatrix REST API with Role-Based Access Control (RBAC), "
-                "Vehicle Management, Inventory Control, and Sales Operations.",
+                "Vehicle Storefront, Shopping Cart, Customer Purchasing, and Financial Reports.",
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -66,15 +67,6 @@ def on_startup():
             )
             db.add(seeded_admin)
             db.commit()
-
-        # Update existing unapproved demo users to Approved so tests pass smoothly
-        users = db.query(User).all()
-        for u in users:
-            if u.email in ["admin@carmatrix.com", "inv_mgr@example.com", "test@example.com"]:
-                if u.status != "Approved":
-                    u.status = "Approved"
-                    u.role = "admin" if u.email == "admin@carmatrix.com" else ("manager" if "inv" in u.email else "sales")
-        db.commit()
     finally:
         db.close()
 
@@ -99,3 +91,4 @@ app.include_router(vehicle_router, prefix=settings.API_PREFIX)
 app.include_router(inventory_router, prefix=settings.API_PREFIX)
 app.include_router(users_router, prefix=settings.API_PREFIX)
 app.include_router(sales_router, prefix=settings.API_PREFIX)
+app.include_router(orders_router, prefix=settings.API_PREFIX)

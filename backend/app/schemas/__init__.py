@@ -3,6 +3,7 @@ from app.schemas.auth import LoginRequest, LoginResponse, Token
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse, InventorySummary
 from app.schemas.inventory import InventoryPurchaseRequest, InventoryRestockRequest, InventoryOperationResponse
 from app.schemas.sale import SaleCreate, SaleResponse, ReportsSummary
+from app.schemas.order import OrderCheckoutRequest, OrderResponse, OrderItemResponse
 
 __all__ = [
     "UserCreate", "UserResponse", "UserStatusUpdate", "UserRoleUpdate",
@@ -10,4 +11,5 @@ __all__ = [
     "VehicleCreate", "VehicleUpdate", "VehicleResponse", "InventorySummary",
     "InventoryPurchaseRequest", "InventoryRestockRequest", "InventoryOperationResponse",
     "SaleCreate", "SaleResponse", "ReportsSummary",
+    "OrderCheckoutRequest", "OrderResponse", "OrderItemResponse"
 ]

@@ -9,7 +9,9 @@ from app.schemas.auth import LoginRequest
 
 def register_user(db: Session, user_in: UserCreate) -> dict:
     """
-    Registers a new user in the database with default status 'Pending'.
+    Registers a new user account.
+    General Users ('customer') are automatically Approved without needing Admin approval.
+    Staff roles ('admin', 'manager', 'sales') require Admin approval ('Pending').
     """
     existing_user = db.query(User).filter(User.email == user_in.email).first()
     if existing_user:
@@ -20,28 +22,38 @@ def register_user(db: Session, user_in: UserCreate) -> dict:
 
     hashed_pwd = hash_password(user_in.password)
 
-    # Normalize role string
-    raw_role = (user_in.role or "sales").lower()
+    raw_role = (user_in.role or "customer").lower()
     if "admin" in raw_role:
         role = "admin"
+        init_status = "Pending"
     elif "manager" in raw_role:
         role = "manager"
-    else:
+        init_status = "Pending"
+    elif "sales" in raw_role and "customer" not in raw_role:
         role = "sales"
+        init_status = "Pending"
+    else:
+        role = "customer"
+        init_status = "Approved"  # Customer accounts get instant approved access!
 
     new_user = User(
         name=user_in.name,
         email=user_in.email,
         hashed_password=hashed_pwd,
         role=role,
-        status="Pending",  # Requires Administrator approval before login
+        status=init_status,
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    return {"message": "Registration successful. Your account is waiting for administrator approval."}
+    if init_status == "Approved":
+        msg = "Registration successful! You can now sign in and start shopping."
+    else:
+        msg = "Registration successful. Your account is waiting for administrator approval."
+
+    return {"message": msg, "user": {"id": new_user.id, "email": new_user.email, "role": new_user.role, "status": new_user.status}}
 
 
 def verify_user_password(plain_password: str, hashed_password: str) -> bool:
@@ -49,9 +61,6 @@ def verify_user_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def login(db: Session, credentials: LoginRequest) -> dict:
-    """
-    Authenticates a user and checks approval status before returning JWT.
-    """
     user = db.query(User).filter(User.email == credentials.email).first()
 
     if not user or not verify_user_password(credentials.password, user.hashed_password):
@@ -61,7 +70,6 @@ def login(db: Session, credentials: LoginRequest) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Status check before issuing JWT
     if user.status == "Pending":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
