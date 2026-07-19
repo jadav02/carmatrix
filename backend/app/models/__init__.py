@@ -1,2 +1,11 @@
-# models package
-# Contains SQLAlchemy ORM models (database table definitions).
+# ==========================================
+# Models Package Exports
+# ==========================================
+# All ORM models should be imported here.
+# This ensures that when Base.metadata.create_all() is run,
+# SQLAlchemy is aware of all models and creates their tables.
+# ==========================================
+
+from app.models.user import User
+
+__all__ = ["User"]
