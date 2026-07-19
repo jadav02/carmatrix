@@ -1,5 +1,5 @@
 // ==========================================
-// Customer Purchase History Page
+// Customer Purchase History Page with Payment Proof Preview
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { getMyOrders } from '../api/orders';
@@ -12,7 +12,8 @@ import {
   CheckCircle, 
   Calendar, 
   CreditCard, 
-  MapPin 
+  MapPin,
+  Image as ImageIcon
 } from 'lucide-react';
 import './CustomerOrders.css';
 
@@ -44,7 +45,7 @@ export default function CustomerOrders() {
       <div className="page-header">
         <div>
           <h1 className="page-title gradient-text">My Purchase History</h1>
-          <p className="page-subtitle">View your past vehicle purchases, receipts, and order invoices</p>
+          <p className="page-subtitle">View your past vehicle purchases, receipts, and payment proof screenshots</p>
         </div>
         <button className="btn btn-secondary icon-only-btn" onClick={fetchOrders} title="Refresh Orders">
           <RefreshCw size={18} className={loading ? 'spin-icon' : ''} />
@@ -109,6 +110,20 @@ export default function CustomerOrders() {
                     </div>
                   ))}
                 </div>
+
+                {order.payment_proof && (
+                  <div className="order-proof-section" style={{ marginTop: '0.85rem', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                      <ImageIcon size={14} className="text-indigo-400" />
+                      <span>Uploaded Payment Proof Screenshot:</span>
+                    </div>
+                    <img 
+                      src={order.payment_proof} 
+                      alt={`Payment proof for order #${order.id}`} 
+                      style={{ maxHeight: '120px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', objectFit: 'contain' }}
+                    />
+                  </div>
+                )}
 
                 <div className="order-footer">
                   <div className="address-info">

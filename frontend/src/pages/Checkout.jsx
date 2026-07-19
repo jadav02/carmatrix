@@ -1,5 +1,5 @@
 // ==========================================
-// Customer Checkout & Billing Page with UPI QR Code
+// Customer Checkout & Billing Page with UPI QR Code & Payment Proof Upload
 // ==========================================
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
@@ -17,7 +17,10 @@ import {
   Smartphone, 
   Banknote,
   Lock,
-  QrCode
+  QrCode,
+  Upload,
+  Image as ImageIcon,
+  Check
 } from 'lucide-react';
 import './Checkout.css';
 
@@ -34,6 +37,9 @@ export default function Checkout() {
     payment_method: 'UPI Payment (9408578951@upi)',
   });
 
+  const [paymentProofImage, setPaymentProofImage] = useState('');
+  const [proofFileName, setProofFileName] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -47,6 +53,23 @@ export default function Checkout() {
     if (errorMessage) setErrorMessage('');
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage('Please upload a valid image file (PNG, JPG, JPEG).');
+        return;
+      }
+      setProofFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentProofImage(reader.result);
+        if (errorMessage) setErrorMessage('');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -57,6 +80,12 @@ export default function Checkout() {
 
     if (!formData.shipping_address.trim() || !formData.city.trim() || !formData.pincode.trim()) {
       setErrorMessage('Please fill out all required billing & shipping fields.');
+      return;
+    }
+
+    // Require payment proof if UPI payment is chosen
+    if (formData.payment_method.includes('UPI') && !paymentProofImage) {
+      setErrorMessage('Please upload your UPI payment screenshot proof before placing your order.');
       return;
     }
 
@@ -74,6 +103,7 @@ export default function Checkout() {
       const order = await checkout({
         shipping_address: fullAddress,
         payment_method: formData.payment_method,
+        payment_proof: paymentProofImage || null,
         items: items,
       });
 
@@ -91,12 +121,12 @@ export default function Checkout() {
       <div className="page-header">
         <div>
           <h1 className="page-title gradient-text">Checkout & Billing</h1>
-          <p className="page-subtitle">Enter your shipping details and select your preferred payment method</p>
+          <p className="page-subtitle">Enter your shipping details, scan UPI QR code, upload payment proof, and complete your purchase</p>
         </div>
       </div>
 
       {orderSuccess ? (
-        <div className="table-card glass-panel" style={{ padding: '3.5rem 2rem', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="table-card glass-panel" style={{ padding: '3.5rem 2rem', textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}>
           <CheckCircle size={64} className="text-success" style={{ margin: '0 auto 1.25rem' }} />
           <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Order Placed Successfully!</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
@@ -120,6 +150,16 @@ export default function Checkout() {
               <span>Shipping Address:</span>
               <span>{orderSuccess.shipping_address}</span>
             </div>
+            {orderSuccess.payment_proof && (
+              <div className="receipt-row" style={{ flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-color)' }}>
+                <span>Payment Screenshot Proof Verified:</span>
+                <img 
+                  src={orderSuccess.payment_proof} 
+                  alt="UPI Payment Proof" 
+                  style={{ maxHeight: '140px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', objectFit: 'contain' }} 
+                />
+              </div>
+            )}
           </div>
 
           <button className="btn btn-primary" onClick={() => navigate('/customer/orders')}>
@@ -243,7 +283,7 @@ export default function Checkout() {
                     onChange={handleChange}
                   />
                   <Smartphone size={20} />
-                  <span>UPI Payment (QR Code)</span>
+                  <span>UPI Payment (QR Code + Upload Proof)</span>
                 </label>
 
                 <label className={`payment-option ${formData.payment_method === 'Cash on Delivery' ? 'active' : ''}`}>
@@ -259,7 +299,7 @@ export default function Checkout() {
                 </label>
               </div>
 
-              {/* Display UPI QR Code Box when UPI is selected */}
+              {/* Display UPI QR Code & Payment Proof Upload Box */}
               {formData.payment_method.includes('UPI') && (
                 <div className="upi-qr-card glass-panel" style={{ marginTop: '1.25rem', padding: '1.5rem', textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontWeight: '700', fontSize: '1.05rem', color: 'var(--primary)' }}>
@@ -278,9 +318,45 @@ export default function Checkout() {
                   <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                     UPI ID: <strong style={{ color: 'var(--accent-emerald)', fontSize: '1rem' }}>{upiId}</strong>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Open Google Pay, PhonePe, Paytm, or BHIM to scan and confirm payment of <strong>{formatINR(totalAmount)}</strong>
-                  </p>
+
+                  {/* Payment Proof Upload Section */}
+                  <div className="proof-upload-box" style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', textAlign: 'left' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <ImageIcon size={18} className="text-indigo-400" />
+                      <span>Upload Payment Screenshot Proof <strong style={{ color: 'var(--danger)' }}>*</strong></span>
+                    </label>
+
+                    <div className="upload-input-container">
+                      <input 
+                        type="file" 
+                        id="upi-proof-file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="upi-proof-file" className="btn btn-secondary upload-btn">
+                        <Upload size={18} />
+                        <span>{proofFileName ? 'Change Screenshot' : 'Choose Screenshot Image'}</span>
+                      </label>
+                      {proofFileName && (
+                        <span className="file-name-badge">
+                          <Check size={14} className="text-success" />
+                          <span>{proofFileName}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {paymentProofImage && (
+                      <div className="proof-preview-container" style={{ marginTop: '0.85rem' }}>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Payment Screenshot Preview:</p>
+                        <img 
+                          src={paymentProofImage} 
+                          alt="Payment Screenshot Proof Preview" 
+                          style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--primary)', objectFit: 'contain' }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -298,7 +374,7 @@ export default function Checkout() {
                 ) : (
                   <>
                     <Lock size={18} />
-                    <span>Confirm Order & Pay {formatINR(totalAmount)}</span>
+                    <span>Place Order & Pay {formatINR(totalAmount)}</span>
                   </>
                 )}
               </button>

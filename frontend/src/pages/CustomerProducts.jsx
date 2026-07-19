@@ -1,5 +1,5 @@
 // ==========================================
-// Customer Storefront Product Catalog Page with Buy Now
+// Customer Storefront Product Catalog Page with Car Photos & Buy Now
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
@@ -21,6 +21,7 @@ import {
 import './CustomerProducts.css';
 
 const CATEGORIES = ['All', 'Sedan', 'SUV', 'Truck', 'Coupe', 'Electric', 'Hybrid', 'Convertible', 'Wagon', 'Van'];
+const DEFAULT_CAR_PHOTO = "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&auto=format&fit=crop&q=80";
 
 export default function CustomerProducts() {
   const { addToCart } = useCart();
@@ -81,7 +82,7 @@ export default function CustomerProducts() {
             <span>CarMatrix Luxury Showroom</span>
           </div>
           <h1>Explore Premium <span className="gradient-text">Supercars & Vehicles</span></h1>
-          <p>Find your dream car, add it to your shopping cart, or click Buy Now to proceed directly to billing & checkout.</p>
+          <p>Find your dream car, view HD photos, add to cart, or click Buy Now to proceed directly to billing & checkout.</p>
         </div>
       </div>
 
@@ -157,8 +158,14 @@ export default function CustomerProducts() {
                 <span>{v.category}</span>
               </div>
 
+              {/* Car Photo Image Container */}
               <div className="product-image-container">
-                <Car size={64} className="car-avatar" />
+                <img 
+                  src={v.image_url || DEFAULT_CAR_PHOTO} 
+                  alt={`${v.make} ${v.model}`} 
+                  className="car-photo-img" 
+                  onError={(e) => { e.target.src = DEFAULT_CAR_PHOTO; }}
+                />
               </div>
 
               <div className="product-details">

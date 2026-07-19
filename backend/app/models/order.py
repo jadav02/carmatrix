@@ -1,9 +1,6 @@
 # ==========================================
 # Order and OrderItem Database Models
 # ==========================================
-# Tracks customer online purchases, shipping addresses, payment methods,
-# item breakdowns, and purchase history.
-# ==========================================
 
 from datetime import datetime, timezone
 from sqlalchemy import Float, Integer, String, DateTime, ForeignKey
@@ -25,6 +22,7 @@ class Order(Base):
     customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
     shipping_address: Mapped[str] = mapped_column(String(255), nullable=False)
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
+    payment_proof: Mapped[str | None] = mapped_column(String(500), nullable=True)
     total_amount: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="Completed", nullable=False)
     

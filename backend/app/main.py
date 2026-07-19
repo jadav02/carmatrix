@@ -1,5 +1,5 @@
 # ==========================================
-# CarMatrix API — Main Entry Point with Auto-Migration & Luxury Vehicle Pricing
+# CarMatrix API — Main Entry Point with Auto-Migration & Car Image URLs
 # ==========================================
 
 import random
@@ -26,7 +26,7 @@ from app.routers import (
 app = FastAPI(
     title=settings.APP_NAME,
     description="CarMatrix REST API with Role-Based Access Control (RBAC), "
-                "Vehicle Storefront, Shopping Cart, Customer Purchasing, and Financial Reports.",
+                "Vehicle Storefront, Shopping Cart, Customer Purchasing, UPI QR Payments, and Financial Reports.",
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -41,19 +41,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+SAMPLE_CAR_IMAGES = [
+    "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&auto=format&fit=crop&q=80", # Toyota Sedan
+    "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80", # SUV
+    "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=600&auto=format&fit=crop&q=80", # Civic / Sedan
+    "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&auto=format&fit=crop&q=80", # Tesla / EV
+    "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=600&auto=format&fit=crop&q=80", # Porsche / Supercar
+    "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&auto=format&fit=crop&q=80", # Mercedes / Luxury
+]
 
 @app.on_event("startup")
 def on_startup():
-    """Create tables, perform auto-migration, and ensure car prices are above 10,00,00,000 (10 Crores INR)."""
+    """Create tables, perform auto-migration, and assign car photo images & pricing."""
     Base.metadata.create_all(bind=engine)
 
-    # Auto-migrate SQLite schema if 'status' column is missing from existing 'users' table
+    # Auto-migrate SQLite schema
     with engine.connect() as conn:
-        result = conn.execute(text("PRAGMA table_info(users)"))
-        columns = [row[1] for row in result.fetchall()]
-        if "status" not in columns:
+        # Check users status
+        res_users = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+        user_cols = [row[1] for row in res_users]
+        if "status" not in user_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'Approved'"))
-            conn.commit()
+
+        # Check vehicles image_url
+        res_veh = conn.execute(text("PRAGMA table_info(vehicles)")).fetchall()
+        veh_cols = [row[1] for row in res_veh]
+        if "image_url" not in veh_cols:
+            conn.execute(text("ALTER TABLE vehicles ADD COLUMN image_url VARCHAR(500)"))
+
+        # Check orders payment_proof
+        res_ord = conn.execute(text("PRAGMA table_info(orders)")).fetchall()
+        ord_cols = [row[1] for row in res_ord]
+        if "payment_proof" not in ord_cols:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN payment_proof VARCHAR(500)"))
+
+        conn.commit()
 
     db: Session = SessionLocal()
     try:
@@ -70,13 +92,14 @@ def on_startup():
             db.add(seeded_admin)
             db.commit()
 
-        # Update all car prices to be above 100,000,000 INR (10 Crores+)
+        # Update vehicle prices (> 100,000,000 INR) and image_urls
         vehicles = db.query(Vehicle).all()
         base_prices = [125000000.0, 185000000.0, 240000000.0, 310000000.0, 145000000.0, 220000000.0, 295000000.0]
         for idx, v in enumerate(vehicles):
             if v.price < 100000000.0:
-                random_price = base_prices[idx % len(base_prices)] + (random.randint(1, 50) * 1000000.0)
-                v.price = random_price
+                v.price = base_prices[idx % len(base_prices)] + (random.randint(1, 50) * 1000000.0)
+            if not v.image_url:
+                v.image_url = SAMPLE_CAR_IMAGES[idx % len(SAMPLE_CAR_IMAGES)]
         db.commit()
     finally:
         db.close()

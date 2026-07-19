@@ -63,6 +63,32 @@
   color: var(--primary);
 }
 
+.upload-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.upload-btn {
+  padding: 0.65rem 1.15rem;
+  font-size: 0.9rem;
+}
+
+.file-name-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .checkout-invoice-card {
   width: 360px;
   padding: 1.75rem;

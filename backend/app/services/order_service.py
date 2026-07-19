@@ -10,7 +10,7 @@ from app.schemas.order import OrderCheckoutRequest
 def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user: User) -> Order:
     """
     Processes customer checkout: validates vehicle stock, reduces inventory,
-    calculates totals, and records the purchase transaction.
+    calculates totals, saves payment proof, and records the purchase transaction.
     """
     total_amount = 0.0
     order_items_to_create = []
@@ -51,6 +51,7 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
         customer_email=current_user.email,
         shipping_address=checkout_in.shipping_address,
         payment_method=checkout_in.payment_method,
+        payment_proof=checkout_in.payment_proof,
         total_amount=round(total_amount, 2),
         status="Completed",
     )
