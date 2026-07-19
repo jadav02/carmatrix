@@ -1,10 +1,7 @@
 # ==========================================
 # Authentication Schemas
 # ==========================================
-# These schemas handle the login request and
-# the JWT token response. Kept separate from
-# user schemas because they serve a different
-# concern (authentication vs. user CRUD).
+# Schemas for user login request and login response.
 # ==========================================
 
 from pydantic import BaseModel, EmailStr, Field
@@ -14,27 +11,21 @@ from app.schemas.user import UserResponse
 
 class LoginRequest(BaseModel):
     """
-    Schema for user login.
-
-    Accepts email and password, validates them
-    against the database to issue a JWT token.
+    Schema for user login request.
     """
     email: EmailStr = Field(..., description="Registered email address")
     password: str = Field(..., min_length=8, description="Account password")
 
 
-class Token(BaseModel):
+class LoginResponse(BaseModel):
     """
-    Schema for the JWT token response returned after login.
-
-    Attributes:
-        message: Success message.
-        access_token: The JWT string.
-        token_type: Always 'bearer' (OAuth2 convention).
-        user: The authenticated user's details.
+    Schema for user login response.
     """
-    message: str
-    access_token: str
-    token_type: str = "bearer"
-    user: UserResponse
+    message: str = Field(default="Login Successful", description="Response message")
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+    user: UserResponse = Field(..., description="User details")
 
+
+# Alias for compatibility with existing code
+Token = LoginResponse
