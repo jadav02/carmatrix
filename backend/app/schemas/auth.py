@@ -9,6 +9,8 @@
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.schemas.user import UserResponse
+
 
 class LoginRequest(BaseModel):
     """
@@ -26,8 +28,13 @@ class Token(BaseModel):
     Schema for the JWT token response returned after login.
 
     Attributes:
+        message: Success message.
         access_token: The JWT string.
         token_type: Always 'bearer' (OAuth2 convention).
+        user: The authenticated user's details.
     """
+    message: str
     access_token: str
     token_type: str = "bearer"
+    user: UserResponse
+

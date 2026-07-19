@@ -54,7 +54,7 @@ def login_user(db: Session, credentials: LoginRequest) -> dict:
     - Verifies the password against the stored bcrypt hash.
 
     Returns:
-        dict: Contains 'access_token' and 'token_type'.
+        dict: Contains 'message', 'access_token', 'token_type', and 'user'.
 
     Raises:
         HTTPException 401: If email is not found or password is incorrect.
@@ -82,7 +82,15 @@ def login_user(db: Session, credentials: LoginRequest) -> dict:
     access_token = create_access_token(data=token_data)
 
     return {
+        "message": "Login Successful",
         "access_token": access_token,
         "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+        },
     }
+
 
