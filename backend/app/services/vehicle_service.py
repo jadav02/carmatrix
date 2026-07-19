@@ -65,17 +65,77 @@ def get_vehicle(db: Session, vehicle_id: int) -> Vehicle:
     return vehicle
 
 
-def get_all_vehicles(db: Session) -> list[Vehicle]:
+def get_all_vehicles(
+    db: Session,
+    search: str | None = None,
+    category: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    in_stock_only: bool = False,
+) -> list[Vehicle]:
     """
-    Retrieve all vehicles from the database.
+    Retrieve vehicles with optional search, category, price, and stock filtering.
 
     Args:
         db: Database session.
+        search: Partial match string for make or model.
+        category: Filter by exact vehicle category.
+        min_price: Minimum price filter.
+        max_price: Maximum price filter.
+        in_stock_only: Filter for vehicles with quantity > 0.
 
     Returns:
-        list[Vehicle]: List of all vehicle ORM objects.
+        list[Vehicle]: Filtered list of vehicle ORM objects.
     """
-    return db.query(Vehicle).all()
+    query = db.query(Vehicle)
+
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            (Vehicle.make.ilike(search_pattern)) | (Vehicle.model.ilike(search_pattern))
+        )
+
+    if category:
+        query = query.filter(Vehicle.category.ilike(category))
+
+    if min_price is not None:
+        query = query.filter(Vehicle.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(Vehicle.price <= max_price)
+
+    if in_stock_only:
+        query = query.filter(Vehicle.quantity > 0)
+
+    return query.all()
+
+
+def get_inventory_summary(db: Session) -> dict:
+    """
+    Calculate and return aggregate inventory metrics.
+
+    Metrics include:
+    - total_vehicles: total number of distinct vehicle records
+    - total_quantity: total units in stock across all vehicles
+    - total_inventory_value: total financial valuation (sum of price * quantity)
+    - low_stock_count: number of vehicle items with quantity <= 3
+
+    Returns:
+        dict: Summary statistics dictionary matching InventorySummary schema.
+    """
+    vehicles = db.query(Vehicle).all()
+
+    total_vehicles = len(vehicles)
+    total_quantity = sum(v.quantity for v in vehicles)
+    total_inventory_value = sum(v.price * v.quantity for v in vehicles)
+    low_stock_count = sum(1 for v in vehicles if v.quantity <= 3)
+
+    return {
+        "total_vehicles": total_vehicles,
+        "total_quantity": total_quantity,
+        "total_inventory_value": round(total_inventory_value, 2),
+        "low_stock_count": low_stock_count,
+    }
 
 
 def update_vehicle(db: Session, vehicle_id: int, vehicle_in: VehicleUpdate) -> Vehicle:

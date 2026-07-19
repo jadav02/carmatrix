@@ -46,3 +46,14 @@ class VehicleResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class InventorySummary(BaseModel):
+    """
+    Schema for inventory statistics summary.
+    """
+    total_vehicles: int = Field(..., description="Number of distinct vehicle models in inventory")
+    total_quantity: int = Field(..., description="Total quantity of all vehicles across inventory")
+    total_inventory_value: float = Field(..., description="Total financial value of current inventory")
+    low_stock_count: int = Field(..., description="Number of vehicles with stock level <= 3")
+
