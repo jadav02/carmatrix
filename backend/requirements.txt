@@ -1,0 +1,25 @@
+# ==========================================
+# Car Dealership Inventory System
+# Backend Dependencies
+# ==========================================
+
+# Web Framework
+fastapi==0.115.12
+
+# ASGI Server
+uvicorn==0.34.3
+
+# ORM and Database
+sqlalchemy==2.0.41
+
+# Data Validation
+pydantic==2.11.4
+pydantic-settings==2.9.1
+
+# Authentication
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.4.0
+python-multipart==0.0.20
+
+# CORS
+# (included in FastAPI / Starlette)
