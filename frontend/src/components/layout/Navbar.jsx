@@ -20,7 +20,7 @@ export default function Navbar({ onToggleSidebar }) {
           <Menu size={20} />
         </button>
         <div className="navbar-title">
-          <span>Car Dealership Portal</span>
+          <span>CarMatrix Dealership Portal</span>
         </div>
       </div>
 

@@ -13,7 +13,7 @@ export default function Sidebar({ isOpen }) {
         <div className="brand-logo">
           <Car className="brand-icon" size={28} />
           <div className="brand-text">
-            <span className="brand-name gradient-text">AutoVault</span>
+            <span className="brand-name gradient-text">CarMatrix</span>
             <span className="brand-sub">Management</span>
           </div>
         </div>

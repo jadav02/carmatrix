@@ -18,7 +18,7 @@ export default function ProtectedRoute() {
       <div className="loading-screen">
         <div className="loading-logo gradient-text">
           <Car size={36} className="text-indigo-400" />
-          <span>AutoVault</span>
+          <span>CarMatrix</span>
         </div>
         <div className="spinner" style={{ width: '32px', height: '32px' }} />
         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Verifying session...</p>

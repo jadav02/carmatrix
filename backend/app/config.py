@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     """
 
     # ---- Application ----
-    APP_NAME: str = "Car Dealership Inventory System"
+    APP_NAME: str = "CarMatrix API"
     APP_VERSION: str = "1.0.0"
     API_PREFIX: str = "/api"
     DEBUG: bool = True
