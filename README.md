@@ -48,6 +48,21 @@ CarMatrix is a modern, full-stack Dealership Management System (DMS) built with 
 
 ---
 
+## 🤖 My AI Usage (Mandatory Kata Section)
+
+### AI Tools Used
+- **Antigravity AI / Gemini 3.5 Pro**: Used as an agentic AI coding assistant for system architecture design, code generation, TDD test suite development, refactoring, and UI design.
+
+### How AI Was Used
+1. **API Architecture & ORM Models**: Designing RESTful API endpoints (`/api/auth`, `/api/vehicles`, `/api/orders`, `/api/inventory`, `/api/sales`), SQLAlchemy database models, and JWT authentication middleware.
+2. **Test-Driven Development (TDD)**: Writing 46 comprehensive Pytest unit and integration test cases covering authentication, instant user approval, staff pending approval, vehicle CRUD, inventory stock purchase/restock, order checkout, and RBAC permissions.
+3. **Frontend UI & Styling**: Building the glassmorphic design system in Vanilla CSS, Sun/Moon theme toggle, responsive layout components, vehicle modal with live profit calculation, shopping cart, and UPI/Bank Transfer checkout flow.
+
+### Workflow Reflection
+Leveraging AI significantly accelerated the end-to-end development cycle. It enabled rapid iteration on complex feature requirements—such as token payments, proof uploads, dual price tracking, and multi-role dashboards—while maintaining clean code practices, SOLID design principles, and 100% test pass rate.
+
+---
+
 ## 🚦 Complete Approval Workflow
 
 1. **Staff Sign Up**: A new employee registers under the **Sales Representative** or **Inventory Manager** role on `/register`.
@@ -112,15 +127,17 @@ npm run dev
 
 ---
 
-## 📋 Submission Checklist
+## 📋 Deliverables & Checklist
 
+- [x] **Backend API (RESTful)**: FastAPI with SQLite database & JWT authentication.
+- [x] **Frontend Application**: React SPA with Tailwind/Vanilla CSS tokens, responsive design, dark/light theme switch.
+- [x] **TDD Test Suite**: 46 automated tests (100% passing).
 - [x] **Dark & Light Mode**: Sun / Moon icon toggle with persistent `localStorage`.
-- [x] **Role-Based Access Control**: General User, Sales Rep, Inventory Manager, Administrator.
+- [x] **Role-Based Access Control**: General User (buyer), Sales Rep, Inventory Manager, Administrator.
 - [x] **General User E-Commerce Flow**: Catalog, Cart, UPI QR Payment with screenshot proof, Bank Transfer with token amount/full payment, Checkout, and Purchase History.
 - [x] **Purchase Price & Sale Profit Calculation**: Procurement cost vs. selling price tracked per unit and per sale.
-- [x] **Staff Approval Workflow**: Tested and verified (Pending -> Admin Approve -> Login).
-- [x] **API Error Prevention**: Clean error handling preventing `[object Object]` and network failures.
-- [x] **46 Passing Pytest Tests**: Comprehensive test suite covering auth, RBAC, inventory, and orders.
+- [x] **Mandatory "My AI Usage" Section**: Detailed AI tools, usage description, and reflection.
+- [x] **PROMPTS.md File**: Full prompt history in root folder.
 
 ---
 
