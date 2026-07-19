@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserResponse
 from app.schemas.auth import LoginRequest, Token
 from app.services import auth_service
+from app.core.dependencies import get_current_user
+from app.models.user import User
 
 router = APIRouter(
     prefix="/auth",
@@ -37,4 +39,16 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     for protected endpoints.
     """
     return auth_service.login_user(db=db, credentials=credentials)
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    """
+    Get the currently authenticated user's profile.
+
+    Requires a valid Bearer token in the Authorization header.
+
+    Returns the user's id, name, email, and role.
+    """
+    return current_user
 
