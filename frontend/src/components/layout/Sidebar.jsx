@@ -30,17 +30,21 @@ export default function Sidebar({ isOpen }) {
           <span>Dashboard</span>
         </NavLink>
 
-        <div className="nav-item disabled" title="Vehicle module coming in next update">
+        <NavLink 
+          to="/vehicles" 
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
           <Car size={20} />
           <span>Vehicles</span>
-          <span className="badge-soon">Soon</span>
-        </div>
+        </NavLink>
 
-        <div className="nav-item disabled" title="Inventory module coming in next update">
+        <NavLink 
+          to="/inventory" 
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
           <Boxes size={20} />
           <span>Inventory</span>
-          <span className="badge-soon">Soon</span>
-        </div>
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">
