@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import auth_router
+from app.routers import auth_router, vehicle_router
 
 
 # ==========================================
@@ -125,3 +125,4 @@ def health_check():
 # 5. Include API Routers
 # ==========================================
 app.include_router(auth_router, prefix=settings.API_PREFIX)
+app.include_router(vehicle_router, prefix=settings.API_PREFIX)
