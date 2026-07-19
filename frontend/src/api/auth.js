@@ -13,21 +13,28 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
  * @param {Object} userData - { name, email, password, role }
  */
 export async function registerUser(userData) {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(userData),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.detail || 'Registration failed. Please try again.');
+    if (!response.ok) {
+      throw new Error(data.detail || 'Registration failed. Please try again.');
+    }
+
+    return data;
+  } catch (err) {
+    if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+      throw new Error('Unable to connect to CarMatrix server. Please ensure backend server is running on http://localhost:8000.');
+    }
+    throw err;
   }
-
-  return data;
 }
 
 /**
@@ -35,19 +42,26 @@ export async function registerUser(userData) {
  * @param {Object} credentials - { email, password }
  */
 export async function loginUser(credentials) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.detail || 'Login failed. Please check your credentials.');
+    if (!response.ok) {
+      throw new Error(data.detail || 'Login failed. Please check your credentials.');
+    }
+
+    return data;
+  } catch (err) {
+    if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+      throw new Error('Unable to connect to CarMatrix server. Please ensure backend server is running on http://localhost:8000.');
+    }
+    throw err;
   }
-
-  return data;
 }

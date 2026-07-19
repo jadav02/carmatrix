@@ -27,29 +27,40 @@ function handleAuthError(response) {
   }
 }
 
+function handleNetworkError(err) {
+  if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+    throw new Error('Unable to connect to CarMatrix server. Please ensure backend server is running on http://localhost:8000.');
+  }
+  throw err;
+}
+
 /**
  * Purchase/sell vehicle stock (decreases quantity)
  * @param {number} vehicle_id 
  * @param {number} quantity 
  */
 export async function purchaseStock(vehicle_id, quantity) {
-  const response = await fetch(`${API_BASE_URL}/inventory/purchase`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ vehicle_id: Number(vehicle_id), quantity: Number(quantity) }),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/inventory/purchase`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ vehicle_id: Number(vehicle_id), quantity: Number(quantity) }),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    if (Array.isArray(data.detail)) {
-      throw new Error(data.detail.map(e => e.msg).join(', '));
+    const data = await response.json();
+    if (!response.ok) {
+      if (Array.isArray(data.detail)) {
+        throw new Error(data.detail.map(e => e.msg).join(', '));
+      }
+      throw new Error(data.detail || 'Purchase failed');
     }
-    throw new Error(data.detail || 'Purchase failed');
-  }
 
-  return data;
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
+  }
 }
 
 /**
@@ -58,40 +69,48 @@ export async function purchaseStock(vehicle_id, quantity) {
  * @param {number} quantity 
  */
 export async function restockStock(vehicle_id, quantity) {
-  const response = await fetch(`${API_BASE_URL}/inventory/restock`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ vehicle_id: Number(vehicle_id), quantity: Number(quantity) }),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/inventory/restock`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ vehicle_id: Number(vehicle_id), quantity: Number(quantity) }),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    if (Array.isArray(data.detail)) {
-      throw new Error(data.detail.map(e => e.msg).join(', '));
+    const data = await response.json();
+    if (!response.ok) {
+      if (Array.isArray(data.detail)) {
+        throw new Error(data.detail.map(e => e.msg).join(', '));
+      }
+      throw new Error(data.detail || 'Restock failed');
     }
-    throw new Error(data.detail || 'Restock failed');
-  }
 
-  return data;
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
+  }
 }
 
 /**
  * Get current inventory list
  */
 export async function getInventory() {
-  const response = await fetch(`${API_BASE_URL}/inventory`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/inventory`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.detail || 'Failed to fetch inventory');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to fetch inventory');
+    }
+
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
   }
-
-  return data;
 }

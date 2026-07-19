@@ -30,134 +30,165 @@ function handleAuthError(response) {
   }
 }
 
+function handleNetworkError(err) {
+  if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+    throw new Error('Unable to connect to CarMatrix server. Please ensure backend server is running on http://localhost:8000.');
+  }
+  throw err;
+}
+
 /**
  * Get all vehicles with optional filters
  */
 export async function getVehicles(filters = {}) {
-  const queryParams = new URLSearchParams();
-  
-  if (filters.search) queryParams.append('search', filters.search);
-  if (filters.category && filters.category !== 'All') queryParams.append('category', filters.category);
-  if (filters.min_price) queryParams.append('min_price', filters.min_price);
-  if (filters.max_price) queryParams.append('max_price', filters.max_price);
-  if (filters.in_stock_only) queryParams.append('in_stock_only', 'true');
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.category && filters.category !== 'All') queryParams.append('category', filters.category);
+    if (filters.min_price) queryParams.append('min_price', filters.min_price);
+    if (filters.max_price) queryParams.append('max_price', filters.max_price);
+    if (filters.in_stock_only) queryParams.append('in_stock_only', 'true');
 
-  const url = `${API_BASE_URL}/vehicles/?${queryParams.toString()}`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
+    const url = `${API_BASE_URL}/vehicles/?${queryParams.toString()}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.detail || 'Failed to fetch vehicles');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to fetch vehicles');
+    }
+
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
   }
-
-  return data;
 }
 
 /**
  * Get inventory statistics summary
  */
 export async function getInventorySummary() {
-  const response = await fetch(`${API_BASE_URL}/vehicles/summary`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/vehicles/summary`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.detail || 'Failed to fetch inventory summary');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to fetch inventory summary');
+    }
+
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
   }
-
-  return data;
 }
 
 /**
  * Get vehicle by ID
  */
 export async function getVehicleById(id) {
-  const response = await fetch(`${API_BASE_URL}/vehicles/${id}`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/vehicles/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.detail || 'Failed to fetch vehicle details');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to fetch vehicle details');
+    }
+
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
   }
-
-  return data;
 }
 
 /**
  * Create a new vehicle
  */
 export async function createVehicle(vehicleData) {
-  const response = await fetch(`${API_BASE_URL}/vehicles/`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(vehicleData),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/vehicles/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(vehicleData),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    if (Array.isArray(data.detail)) {
-      throw new Error(data.detail.map(e => e.msg).join(', '));
+    const data = await response.json();
+    if (!response.ok) {
+      if (Array.isArray(data.detail)) {
+        throw new Error(data.detail.map(e => e.msg).join(', '));
+      }
+      throw new Error(data.detail || 'Failed to create vehicle');
     }
-    throw new Error(data.detail || 'Failed to create vehicle');
-  }
 
-  return data;
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
+  }
 }
 
 /**
  * Update an existing vehicle
  */
 export async function updateVehicle(id, vehicleData) {
-  const response = await fetch(`${API_BASE_URL}/vehicles/${id}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(vehicleData),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/vehicles/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(vehicleData),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    if (Array.isArray(data.detail)) {
-      throw new Error(data.detail.map(e => e.msg).join(', '));
+    const data = await response.json();
+    if (!response.ok) {
+      if (Array.isArray(data.detail)) {
+        throw new Error(data.detail.map(e => e.msg).join(', '));
+      }
+      throw new Error(data.detail || 'Failed to update vehicle');
     }
-    throw new Error(data.detail || 'Failed to update vehicle');
-  }
 
-  return data;
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
+  }
 }
 
 /**
  * Delete a vehicle by ID
  */
 export async function deleteVehicle(id) {
-  const response = await fetch(`${API_BASE_URL}/vehicles/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/vehicles/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
 
-  handleAuthError(response);
+    handleAuthError(response);
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.detail || 'Failed to delete vehicle');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to delete vehicle');
+    }
+
+    return data;
+  } catch (err) {
+    handleNetworkError(err);
   }
-
-  return data;
 }
