@@ -1,17 +1,19 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User
 from app.schemas.user import UserCreate
+from app.schemas.auth import LoginRequest
+
 
 def register_user(db: Session, user_in: UserCreate) -> dict:
     """
     Registers a new user in the database.
-    
+
     Validations:
     - Checks if the email is already registered.
-    
+
     Actions:
     - Hashes the password.
     - Saves the new user to the database.
@@ -41,3 +43,46 @@ def register_user(db: Session, user_in: UserCreate) -> dict:
     db.refresh(new_user)
 
     return {"message": "User Created Successfully"}
+
+
+def login_user(db: Session, credentials: LoginRequest) -> dict:
+    """
+    Authenticates a user and returns a JWT access token.
+
+    Validations:
+    - Checks if the email exists in the database.
+    - Verifies the password against the stored bcrypt hash.
+
+    Returns:
+        dict: Contains 'access_token' and 'token_type'.
+
+    Raises:
+        HTTPException 401: If email is not found or password is incorrect.
+    """
+    # Look up the user by email
+    user = db.query(User).filter(User.email == credentials.email).first()
+
+    # If user doesn't exist OR password doesn't match, return 401
+    # (we use the same error message for both to avoid leaking
+    #  whether a given email is registered)
+    if not user or not verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Build the JWT payload (claims)
+    token_data = {
+        "sub": user.email,   # subject — standard JWT claim
+        "role": user.role,   # custom claim for RBAC
+    }
+
+    # Generate the token
+    access_token = create_access_token(data=token_data)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+    }
+

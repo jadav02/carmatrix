@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.user import UserCreate
+from app.schemas.auth import LoginRequest, Token
 from app.services import auth_service
 
 router = APIRouter(
@@ -10,14 +11,30 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user.
-    
+
     - **name**: Full name (min 2 characters)
     - **email**: Valid and unique email address
     - **password**: Secure password (min 8 characters)
     - **role**: User role (defaults to 'user')
     """
     return auth_service.register_user(db=db, user_in=user_in)
+
+
+@router.post("/login", response_model=Token)
+def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Authenticate a user and return a JWT access token.
+
+    - **email**: Registered email address
+    - **password**: Account password
+
+    Returns a Bearer token to be used in the Authorization header
+    for protected endpoints.
+    """
+    return auth_service.login_user(db=db, credentials=credentials)
+
