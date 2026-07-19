@@ -1,10 +1,11 @@
 # ==========================================
-# CarMatrix API — Main Entry Point
+# CarMatrix API — Main Entry Point with Auto-Migration
 # ==========================================
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.config import settings
 from app.database import Base, engine, SessionLocal
@@ -40,8 +41,16 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    """Create all database tables and seed default Administrator on startup."""
+    """Create tables and perform auto-migration if SQLite columns are missing."""
     Base.metadata.create_all(bind=engine)
+
+    # Auto-migrate SQLite schema if 'status' column is missing from existing 'users' table
+    with engine.connect() as conn:
+        result = conn.execute(text("PRAGMA table_info(users)"))
+        columns = [row[1] for row in result.fetchall()]
+        if "status" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'Approved'"))
+            conn.commit()
 
     # Seed initial Administrator if no Admin exists
     db: Session = SessionLocal()
