@@ -1,8 +1,9 @@
 # ==========================================
 # User Database Model
 # ==========================================
-# This model defines the structure of the 'users' table in the database.
-# It inherits from our base metadata class so SQLAlchemy can track it.
+# Defines the 'users' table structure with RBAC fields:
+#   - role: 'admin', 'manager', 'sales'
+#   - status: 'Pending', 'Approved', 'Rejected'
 # ==========================================
 
 from sqlalchemy import String
@@ -19,26 +20,21 @@ class User(Base):
         id: Primary key, unique identifier.
         name: Full name of the user.
         email: Unique, indexed email address used for login.
-        hashed_password: Hashed password string (never store plain text!).
-        role: Access control role (e.g., 'user', 'admin'). Defaults to 'user'.
+        hashed_password: Hashed password string.
+        role: RBAC role ('admin', 'manager', 'sales').
+        status: Approval status ('Pending', 'Approved', 'Rejected').
     """
     __tablename__ = "users"
 
-    # id is auto-incrementing by default for integer primary keys
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    
-    # name is required
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    
-    # email must be unique and indexed for fast lookups during login
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    
-    # hashed_password stores bcrypt hashes
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    
-    # role defaults to 'user'
     role: Mapped[str] = mapped_column(
-        String(50), default="user", server_default="user", nullable=False
+        String(50), default="sales", server_default="sales", nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default="Pending", server_default="Pending", nullable=False
     )

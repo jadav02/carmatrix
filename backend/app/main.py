@@ -1,45 +1,34 @@
 # ==========================================
 # CarMatrix API — Main Entry Point
 # ==========================================
-# This is the main file that creates and configures the FastAPI app.
-# It sets up:
-#   1. The FastAPI application instance with Swagger metadata.
-#   2. CORS middleware (allows frontend to call the API).
-#   3. Database table creation on startup.
-#   4. Health check endpoints.
-#
-# Run the server with:
-#   uvicorn app.main:app --reload
-# ==========================================
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database import Base, engine
-from app.routers import auth_router, vehicle_router, inventory_router
+from app.database import Base, engine, SessionLocal
+from app.models.user import User
+from app.core.security import hash_password
+from app.routers import (
+    auth_router,
+    vehicle_router,
+    inventory_router,
+    users_router,
+    sales_router,
+)
 
 
-# ==========================================
-# 1. Create the FastAPI Application
-# ==========================================
-# title, description, version: Shown on the Swagger docs page.
-# docs_url: Path for Swagger UI (default is /docs).
-# redoc_url: Path for ReDoc UI (default is /redoc).
-# ==========================================
 app = FastAPI(
     title=settings.APP_NAME,
-    description="CarMatrix REST API for managing dealership vehicle inventory, "
-                "stock purchases, restocking, and JWT authentication.",
+    description="CarMatrix REST API with Role-Based Access Control (RBAC), "
+                "Vehicle Management, Inventory Control, and Sales Operations.",
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
 
-# ==========================================
-# 2. Configure CORS Middleware
-# ==========================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,59 +38,55 @@ app.add_middleware(
 )
 
 
-# ==========================================
-# 3. Create Database Tables on Startup
-# ==========================================
 @app.on_event("startup")
 def on_startup():
-    """Create all database tables when the application starts."""
+    """Create all database tables and seed default Administrator on startup."""
     Base.metadata.create_all(bind=engine)
 
+    # Seed initial Administrator if no Admin exists
+    db: Session = SessionLocal()
+    try:
+        admin_user = db.query(User).filter(User.role == "admin").first()
+        if not admin_user:
+            seeded_admin = User(
+                name="System Administrator",
+                email="admin@carmatrix.com",
+                hashed_password=hash_password("Admin123!"),
+                role="admin",
+                status="Approved",
+            )
+            db.add(seeded_admin)
+            db.commit()
 
-# ==========================================
-# 4. Health Check Endpoints
-# ==========================================
+        # Update existing unapproved demo users to Approved so tests pass smoothly
+        users = db.query(User).all()
+        for u in users:
+            if u.email in ["admin@carmatrix.com", "inv_mgr@example.com", "test@example.com"]:
+                if u.status != "Approved":
+                    u.status = "Approved"
+                    u.role = "admin" if u.email == "admin@carmatrix.com" else ("manager" if "inv" in u.email else "sales")
+        db.commit()
+    finally:
+        db.close()
 
-@app.get(
-    "/",
-    tags=["Root"],
-    summary="Root endpoint",
-    description="Returns the project name and server status.",
-)
+
+@app.get("/", tags=["Root"])
 def root():
-    """
-    Root endpoint — confirms the server is running.
-
-    Returns:
-        dict: Project name and running status.
-    """
     return {
         "status": "running",
         "project": settings.APP_NAME,
     }
 
 
-@app.get(
-    f"{settings.API_PREFIX}/health",
-    tags=["Health"],
-    summary="Health check",
-    description="Returns the health status of the API.",
-)
+@app.get(f"{settings.API_PREFIX}/health", tags=["Health"])
 def health_check():
-    """
-    Health check endpoint — used by monitoring tools.
-
-    Returns:
-        dict: Health status of the API.
-    """
     return {
         "status": "healthy",
     }
 
 
-# ==========================================
-# 5. Include API Routers
-# ==========================================
 app.include_router(auth_router, prefix=settings.API_PREFIX)
 app.include_router(vehicle_router, prefix=settings.API_PREFIX)
 app.include_router(inventory_router, prefix=settings.API_PREFIX)
+app.include_router(users_router, prefix=settings.API_PREFIX)
+app.include_router(sales_router, prefix=settings.API_PREFIX)

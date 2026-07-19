@@ -1,15 +1,12 @@
 # ==========================================
-# Vehicle Router
-# ==========================================
-# CRUD endpoints for managing vehicles.
-# All endpoints require authentication.
+# Vehicle Router with RBAC
 # ==========================================
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin, require_inventory_manager
 from app.models.user import User
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse, InventorySummary
 from app.services import vehicle_service
@@ -24,12 +21,10 @@ router = APIRouter(
 def create_vehicle(
     vehicle_in: VehicleCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_inventory_manager),
 ):
     """
-    Create a new vehicle.
-
-    Requires authentication.
+    Create a new vehicle (Administrator & Inventory Manager only).
     """
     return vehicle_service.create_vehicle(db=db, vehicle_in=vehicle_in)
 
@@ -45,9 +40,7 @@ def get_all_vehicles(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Retrieve all vehicles with optional search, category, price, and stock filters.
-
-    Requires authentication.
+    Retrieve vehicles (All approved users).
     """
     return vehicle_service.get_all_vehicles(
         db=db,
@@ -65,9 +58,7 @@ def get_inventory_summary(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Get high-level inventory statistics and metrics.
-
-    Requires authentication.
+    Get inventory statistics summary (All approved users).
     """
     return vehicle_service.get_inventory_summary(db=db)
 
@@ -80,8 +71,6 @@ def get_vehicle(
 ):
     """
     Retrieve a single vehicle by ID.
-
-    Requires authentication.
     """
     return vehicle_service.get_vehicle(db=db, vehicle_id=vehicle_id)
 
@@ -91,12 +80,10 @@ def update_vehicle(
     vehicle_id: int,
     vehicle_in: VehicleUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_inventory_manager),
 ):
     """
-    Update an existing vehicle (partial update).
-
-    Only provided fields are updated. Requires authentication.
+    Update an existing vehicle (Administrator & Inventory Manager only).
     """
     return vehicle_service.update_vehicle(db=db, vehicle_id=vehicle_id, vehicle_in=vehicle_in)
 
@@ -105,11 +92,9 @@ def update_vehicle(
 def delete_vehicle(
     vehicle_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """
-    Delete a vehicle by ID.
-
-    Requires authentication.
+    Delete a vehicle by ID (Administrator ONLY).
     """
     return vehicle_service.delete_vehicle(db=db, vehicle_id=vehicle_id)

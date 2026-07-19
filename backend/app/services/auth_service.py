@@ -9,16 +9,8 @@ from app.schemas.auth import LoginRequest
 
 def register_user(db: Session, user_in: UserCreate) -> dict:
     """
-    Registers a new user in the database.
-
-    Validations:
-    - Checks if the email is already registered.
-
-    Actions:
-    - Hashes the password.
-    - Saves the new user to the database.
+    Registers a new user in the database with default status 'Pending'.
     """
-    # Check for duplicate email
     existing_user = db.query(User).filter(User.email == user_in.email).first()
     if existing_user:
         raise HTTPException(
@@ -26,57 +18,42 @@ def register_user(db: Session, user_in: UserCreate) -> dict:
             detail="Email already registered"
         )
 
-    # Hash password
     hashed_pwd = hash_password(user_in.password)
 
-    # Create new user instance
+    # Normalize role string
+    raw_role = (user_in.role or "sales").lower()
+    if "admin" in raw_role:
+        role = "admin"
+    elif "manager" in raw_role:
+        role = "manager"
+    else:
+        role = "sales"
+
     new_user = User(
         name=user_in.name,
         email=user_in.email,
         hashed_password=hashed_pwd,
-        role=user_in.role
+        role=role,
+        status="Pending",  # Requires Administrator approval before login
     )
 
-    # Save to database
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    return {"message": "User Created Successfully"}
+    return {"message": "Registration successful. Your account is waiting for administrator approval."}
 
 
 def verify_user_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify plain text password against stored hashed password using password hashing utility.
-
-    Args:
-        plain_password: Plain text password provided by user.
-        hashed_password: Stored bcrypt hash from database.
-
-    Returns:
-        bool: True if password matches hash (success), False otherwise (failure).
-    """
     return verify_password(plain_password, hashed_password)
 
 
 def login(db: Session, credentials: LoginRequest) -> dict:
     """
-    Authenticates a user and returns a JWT access token along with user details.
-
-    Validations:
-    - Checks if the email exists in the database.
-    - Verifies the password against the stored bcrypt hash.
-
-    Returns:
-        dict: Contains 'message', 'access_token', 'token_type', and 'user'.
-
-    Raises:
-        HTTPException 401: If email is not found or password is incorrect.
+    Authenticates a user and checks approval status before returning JWT.
     """
-    # Look up the user by email
     user = db.query(User).filter(User.email == credentials.email).first()
 
-    # If user doesn't exist OR password verification fails, return 401
     if not user or not verify_user_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -84,13 +61,29 @@ def login(db: Session, credentials: LoginRequest) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Build the JWT payload (claims)
+    # Status check before issuing JWT
+    if user.status == "Pending":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is waiting for administrator approval.",
+        )
+    elif user.status == "Rejected":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account Rejected",
+        )
+    elif user.status != "Approved":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is waiting for administrator approval.",
+        )
+
     token_data = {
-        "sub": user.email,   # subject — standard JWT claim
-        "role": user.role,   # custom claim for RBAC
+        "sub": user.email,
+        "role": user.role,
+        "status": user.status,
     }
 
-    # Generate the token
     access_token = create_access_token(data=token_data)
 
     return {
@@ -102,12 +95,9 @@ def login(db: Session, credentials: LoginRequest) -> dict:
             "name": user.name,
             "email": user.email,
             "role": user.role,
+            "status": user.status,
         },
     }
 
 
-# Alias for backward compatibility
 login_user = login
-
-
-

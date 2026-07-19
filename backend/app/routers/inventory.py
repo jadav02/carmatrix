@@ -1,19 +1,12 @@
 # ==========================================
-# Inventory Router
-# ==========================================
-# API Endpoints for Inventory Operations:
-#   - POST /api/inventory/purchase : Purchase/sell vehicle stock (decreases quantity).
-#   - POST /api/inventory/restock  : Restock vehicle inventory (increases quantity).
-#   - GET  /api/inventory          : View current inventory stock status.
-#
-# All endpoints require JWT authentication via get_current_user.
+# Inventory Router with RBAC
 # ==========================================
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_inventory_manager
 from app.models.user import User
 from app.schemas.inventory import (
     InventoryPurchaseRequest,
@@ -37,14 +30,10 @@ router = APIRouter(
 def purchase_stock(
     request: InventoryPurchaseRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_inventory_manager),
 ):
     """
-    Purchase vehicle stock (decreases quantity).
-
-    - Validates vehicle existence (404 if missing).
-    - Prevents negative stock quantities (400 if requested > available stock).
-    - Updates vehicle quantity in the database.
+    Purchase vehicle stock (decreases quantity). (Administrator & Inventory Manager only).
     """
     return inventory_service.purchase_vehicle(db=db, request=request)
 
@@ -57,14 +46,10 @@ def purchase_stock(
 def restock_stock(
     request: InventoryRestockRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_inventory_manager),
 ):
     """
-    Restock vehicle inventory (increases quantity).
-
-    - Validates vehicle existence (404 if missing).
-    - Adds specified quantity to current stock.
-    - Updates vehicle quantity in the database.
+    Restock vehicle inventory (increases quantity). (Administrator & Inventory Manager only).
     """
     return inventory_service.restock_vehicle(db=db, request=request)
 
