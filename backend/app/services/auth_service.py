@@ -45,6 +45,20 @@ def register_user(db: Session, user_in: UserCreate) -> dict:
     return {"message": "User Created Successfully"}
 
 
+def verify_user_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verify plain text password against stored hashed password using password hashing utility.
+
+    Args:
+        plain_password: Plain text password provided by user.
+        hashed_password: Stored bcrypt hash from database.
+
+    Returns:
+        bool: True if password matches hash (success), False otherwise (failure).
+    """
+    return verify_password(plain_password, hashed_password)
+
+
 def login(db: Session, credentials: LoginRequest) -> dict:
     """
     Authenticates a user and returns a JWT access token along with user details.
@@ -62,8 +76,8 @@ def login(db: Session, credentials: LoginRequest) -> dict:
     # Look up the user by email
     user = db.query(User).filter(User.email == credentials.email).first()
 
-    # If user doesn't exist OR password doesn't match, return 401
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    # If user doesn't exist OR password verification fails, return 401
+    if not user or not verify_user_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
