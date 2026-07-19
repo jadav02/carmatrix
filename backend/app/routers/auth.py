@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.user import UserCreate, UserResponse
-from app.schemas.auth import LoginRequest, Token
+from app.schemas.auth import LoginRequest, LoginResponse, Token
 from app.services import auth_service
 from app.core.dependencies import get_current_user
 from app.models.user import User
@@ -27,7 +27,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     return auth_service.register_user(db=db, user_in=user_in)
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=LoginResponse)
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     """
     Authenticate a user and return a JWT access token.
@@ -38,7 +38,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     Returns a Bearer token to be used in the Authorization header
     for protected endpoints.
     """
-    return auth_service.login_user(db=db, credentials=credentials)
+    return auth_service.login(db=db, credentials=credentials)
 
 
 @router.get("/me", response_model=UserResponse)
