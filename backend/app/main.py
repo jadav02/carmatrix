@@ -1,8 +1,9 @@
 # ==========================================
-# CarMatrix API — Main Entry Point with Auto-Migration & Purchase/Sale Price Profit Logic
+# CarMatrix API — Main Entry Point with Lifespan & Auto-Migration
 # ==========================================
 
 import random
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -22,25 +23,6 @@ from app.routers import (
     orders_router,
 )
 
-
-app = FastAPI(
-    title=settings.APP_NAME,
-    description="CarMatrix REST API with Role-Based Access Control (RBAC), "
-                "Vehicle Storefront, Shopping Cart, Procurement Cost & Selling Price Profit Analytics, UPI QR Payments, and Financial Reports.",
-    version=settings.APP_VERSION,
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 SAMPLE_CAR_IMAGES = [
     "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&auto=format&fit=crop&q=80",
     "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80",
@@ -50,8 +32,8 @@ SAMPLE_CAR_IMAGES = [
     "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&auto=format&fit=crop&q=80",
 ]
 
-@app.on_event("startup")
-def on_startup():
+
+def run_startup_migrations():
     """Create tables, perform auto-migration, and seed purchase_price & selling_price profit fields."""
     Base.metadata.create_all(bind=engine)
 
@@ -123,6 +105,32 @@ def on_startup():
         db.commit()
     finally:
         db.close()
+
+
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI):
+    run_startup_migrations()
+    yield
+
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    description="CarMatrix REST API with Role-Based Access Control (RBAC), "
+                "Vehicle Storefront, Shopping Cart, Procurement Cost & Selling Price Profit Analytics, UPI QR Payments, and Financial Reports.",
+    version=settings.APP_VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan,
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/", tags=["Root"])

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 class UserCreate(BaseModel):
     """
@@ -7,7 +7,7 @@ class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="Full name of the user")
     email: EmailStr = Field(..., description="Valid email address")
     password: str = Field(..., min_length=6, description="Password (minimum 6 characters)")
-    role: str = Field(default="sales", description="User role ('admin', 'manager', 'sales')")
+    role: str = Field(default="sales", description="User role ('admin', 'manager', 'sales', 'customer')")
 
 class UserStatusUpdate(BaseModel):
     """
@@ -19,17 +19,16 @@ class UserRoleUpdate(BaseModel):
     """
     Schema for Administrator to change a user's role.
     """
-    role: str = Field(..., description="New role ('admin', 'manager', 'sales')")
+    role: str = Field(..., description="New role ('admin', 'manager', 'sales', 'customer')")
 
 class UserResponse(BaseModel):
     """
     Schema for returning user information.
     """
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     email: EmailStr
     role: str
     status: str
-
-    class Config:
-        from_attributes = True

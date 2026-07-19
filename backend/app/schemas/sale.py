@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class SaleCreate(BaseModel):
     """
@@ -14,6 +14,8 @@ class SaleResponse(BaseModel):
     """
     Schema for returning sale details.
     """
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     vehicle_id: int
     user_id: int
@@ -27,9 +29,6 @@ class SaleResponse(BaseModel):
     total_cost: float
     profit: float
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class ReportsSummary(BaseModel):
     """

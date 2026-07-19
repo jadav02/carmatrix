@@ -2,7 +2,7 @@
 # Vehicle Schemas
 # ==========================================
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class VehicleCreate(BaseModel):
@@ -28,6 +28,8 @@ class VehicleUpdate(BaseModel):
 
 
 class VehicleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     make: str
     model: str
@@ -38,9 +40,6 @@ class VehicleResponse(BaseModel):
     profit_per_unit: float = 0.0
     quantity: int
     image_url: str | None = None
-
-    class Config:
-        from_attributes = True
 
 
 class InventorySummary(BaseModel):

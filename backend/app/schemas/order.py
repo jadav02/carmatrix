@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class OrderItemCreate(BaseModel):
     vehicle_id: int = Field(..., gt=0)
@@ -10,9 +10,11 @@ class OrderCheckoutRequest(BaseModel):
     payment_method: str = Field(..., min_length=2, max_length=50)
     payment_type: str | None = Field("Token Payment", max_length=50)
     payment_proof: str | None = Field(None)
-    items: list[OrderItemCreate] = Field(..., min_items=1)
+    items: list[OrderItemCreate] = Field(..., min_length=1)
 
 class OrderItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     vehicle_id: int
     vehicle_make: str
@@ -23,10 +25,9 @@ class OrderItemResponse(BaseModel):
     subtotal: float
     profit: float | None = 0.0
 
-    class Config:
-        from_attributes = True
-
 class OrderResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     customer_name: str
@@ -43,6 +44,3 @@ class OrderResponse(BaseModel):
     status: str
     created_at: datetime
     items: list[OrderItemResponse] = []
-
-    class Config:
-        from_attributes = True
