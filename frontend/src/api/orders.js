@@ -38,7 +38,16 @@ export async function checkout(checkoutData) {
     });
     handleAuthError(response);
     const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || 'Checkout failed.');
+    if (!response.ok) {
+      // FastAPI validation errors (422) return detail as an array of objects
+      let errorMsg = 'Checkout failed.';
+      if (typeof data.detail === 'string') {
+        errorMsg = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        errorMsg = data.detail.map(e => e.msg || JSON.stringify(e)).join('; ');
+      }
+      throw new Error(errorMsg);
+    }
     return data;
   } catch (err) {
     handleNetworkError(err);

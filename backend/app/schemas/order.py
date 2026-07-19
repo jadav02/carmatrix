@@ -9,7 +9,7 @@ class OrderCheckoutRequest(BaseModel):
     shipping_address: str = Field(..., min_length=5, max_length=255)
     payment_method: str = Field(..., min_length=2, max_length=50)
     payment_type: str | None = Field("Token Payment", max_length=50)
-    payment_proof: str | None = Field(None, max_length=500)
+    payment_proof: str | None = Field(None)
     items: list[OrderItemCreate] = Field(..., min_items=1)
 
 class OrderItemResponse(BaseModel):
