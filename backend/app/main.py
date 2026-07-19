@@ -1,5 +1,5 @@
 # ==========================================
-# CarMatrix API — Main Entry Point with Auto-Migration & Order Payment Token Logic
+# CarMatrix API — Main Entry Point with Auto-Migration & Purchase/Sale Price Profit Logic
 # ==========================================
 
 import random
@@ -26,7 +26,7 @@ from app.routers import (
 app = FastAPI(
     title=settings.APP_NAME,
     description="CarMatrix REST API with Role-Based Access Control (RBAC), "
-                "Vehicle Storefront, Shopping Cart, Customer Purchasing, UPI QR Payments, and Financial Reports.",
+                "Vehicle Storefront, Shopping Cart, Procurement Cost & Selling Price Profit Analytics, UPI QR Payments, and Financial Reports.",
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -52,7 +52,7 @@ SAMPLE_CAR_IMAGES = [
 
 @app.on_event("startup")
 def on_startup():
-    """Create tables, perform auto-migration, and assign car photo images & pricing."""
+    """Create tables, perform auto-migration, and seed purchase_price & selling_price profit fields."""
     Base.metadata.create_all(bind=engine)
 
     # Auto-migrate SQLite schema
@@ -66,17 +66,32 @@ def on_startup():
         veh_cols = [row[1] for row in res_veh]
         if "image_url" not in veh_cols:
             conn.execute(text("ALTER TABLE vehicles ADD COLUMN image_url VARCHAR(500)"))
+        if "purchase_price" not in veh_cols:
+            conn.execute(text("ALTER TABLE vehicles ADD COLUMN purchase_price FLOAT DEFAULT 0.0"))
+        if "selling_price" not in veh_cols:
+            conn.execute(text("ALTER TABLE vehicles ADD COLUMN selling_price FLOAT DEFAULT 0.0"))
 
         res_ord = conn.execute(text("PRAGMA table_info(orders)")).fetchall()
         ord_cols = [row[1] for row in res_ord]
         if "payment_proof" not in ord_cols:
-            conn.execute(text("ALTER TABLE orders ADD COLUMN payment_proof VARCHAR(500)"))
+            conn.execute(text("ALTER TABLE orders ADD COLUMN payment_proof TEXT"))
         if "payment_type" not in ord_cols:
             conn.execute(text("ALTER TABLE orders ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Token Payment'"))
         if "amount_paid" not in ord_cols:
             conn.execute(text("ALTER TABLE orders ADD COLUMN amount_paid FLOAT DEFAULT 100000.0"))
         if "balance_due" not in ord_cols:
             conn.execute(text("ALTER TABLE orders ADD COLUMN balance_due FLOAT DEFAULT 0.0"))
+        if "total_cost" not in ord_cols:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN total_cost FLOAT DEFAULT 0.0"))
+        if "total_profit" not in ord_cols:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN total_profit FLOAT DEFAULT 0.0"))
+
+        res_ord_items = conn.execute(text("PRAGMA table_info(order_items)")).fetchall()
+        ord_item_cols = [row[1] for row in res_ord_items]
+        if "unit_cost" not in ord_item_cols:
+            conn.execute(text("ALTER TABLE order_items ADD COLUMN unit_cost FLOAT DEFAULT 0.0"))
+        if "profit" not in ord_item_cols:
+            conn.execute(text("ALTER TABLE order_items ADD COLUMN profit FLOAT DEFAULT 0.0"))
 
         conn.commit()
 
@@ -99,6 +114,10 @@ def on_startup():
         for idx, v in enumerate(vehicles):
             if v.price < 100000000.0:
                 v.price = base_prices[idx % len(base_prices)] + (random.randint(1, 50) * 1000000.0)
+            if not v.selling_price or v.selling_price <= 0.0:
+                v.selling_price = v.price
+            if not v.purchase_price or v.purchase_price <= 0.0:
+                v.purchase_price = round(v.selling_price * 0.75, 2)
             if not v.image_url:
                 v.image_url = SAMPLE_CAR_IMAGES[idx % len(SAMPLE_CAR_IMAGES)]
         db.commit()

@@ -12,6 +12,7 @@ from app.database import Base
 class Order(Base):
     """
     SQLAlchemy ORM model representing a Customer Purchase Order.
+    Includes financial breakdown: total selling amount, total purchase cost, and net profit.
     """
     __tablename__ = "orders"
 
@@ -26,6 +27,9 @@ class Order(Base):
     payment_proof: Mapped[str | None] = mapped_column(Text, nullable=True)
     
     total_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    total_cost: Mapped[float | None] = mapped_column(Float, default=0.0, nullable=True)
+    total_profit: Mapped[float | None] = mapped_column(Float, default=0.0, nullable=True)
+    
     amount_paid: Mapped[float | None] = mapped_column(Float, default=100000.0, nullable=True)
     balance_due: Mapped[float | None] = mapped_column(Float, default=0.0, nullable=True)
     
@@ -41,6 +45,7 @@ class Order(Base):
 class OrderItem(Base):
     """
     SQLAlchemy ORM model representing individual vehicle items in an order.
+    Includes unit purchase cost and calculated item profit.
     """
     __tablename__ = "order_items"
 
@@ -52,6 +57,8 @@ class OrderItem(Base):
     vehicle_model: Mapped[str] = mapped_column(String(100), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[float] = mapped_column(Float, nullable=False)
+    unit_cost: Mapped[float | None] = mapped_column(Float, default=0.0, nullable=True)
     subtotal: Mapped[float] = mapped_column(Float, nullable=False)
+    profit: Mapped[float | None] = mapped_column(Float, default=0.0, nullable=True)
 
     order: Mapped["Order"] = relationship("Order", back_populates="items")

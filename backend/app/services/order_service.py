@@ -9,10 +9,11 @@ from app.schemas.order import OrderCheckoutRequest
 
 def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user: User) -> Order:
     """
-    Processes customer checkout: validates vehicle stock, reduces inventory,
-    calculates token/full payments, saves payment proof screenshot, and records purchase.
+    Processes customer checkout: validates stock, calculates purchase cost vs selling price profit,
+    saves payment proof screenshot, and records order receipt.
     """
     total_amount = 0.0
+    total_cost = 0.0
     order_items_to_create = []
 
     for item in checkout_in.items:
@@ -32,9 +33,15 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
         # Reduce stock
         vehicle.quantity -= item.quantity
 
-        unit_price = float(vehicle.price)
+        unit_cost = float(vehicle.purchase_price) if vehicle.purchase_price and vehicle.purchase_price > 0 else round(float(vehicle.price) * 0.75, 2)
+        unit_price = float(vehicle.selling_price) if vehicle.selling_price and vehicle.selling_price > 0 else float(vehicle.price)
+
         subtotal = round(unit_price * item.quantity, 2)
+        subtotal_cost = round(unit_cost * item.quantity, 2)
+        item_profit = round(subtotal - subtotal_cost, 2)
+
         total_amount += subtotal
+        total_cost += subtotal_cost
 
         order_items_to_create.append({
             "vehicle_id": vehicle.id,
@@ -42,7 +49,9 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
             "vehicle_model": vehicle.model,
             "quantity": item.quantity,
             "unit_price": unit_price,
+            "unit_cost": unit_cost,
             "subtotal": subtotal,
+            "profit": item_profit,
         })
 
     pay_type = checkout_in.payment_type or "Token Payment"
@@ -53,6 +62,8 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
         amt_paid = round(total_amount, 2)
         bal_due = 0.0
 
+    total_profit = round(total_amount - total_cost, 2)
+
     new_order = Order(
         user_id=current_user.id,
         customer_name=current_user.name,
@@ -62,6 +73,8 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
         payment_type=pay_type,
         payment_proof=checkout_in.payment_proof,
         total_amount=round(total_amount, 2),
+        total_cost=round(total_cost, 2),
+        total_profit=total_profit,
         amount_paid=amt_paid,
         balance_due=bal_due,
         status="Completed",

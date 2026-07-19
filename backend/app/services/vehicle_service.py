@@ -1,10 +1,7 @@
 # ==========================================
 # Vehicle Service
 # ==========================================
-# Business logic for vehicle CRUD operations.
-# Each function receives a database session and
-# the relevant schema/ID, performs the operation,
-# and returns the result or raises an HTTPException.
+# Business logic for vehicle CRUD operations and inventory valuation.
 # ==========================================
 
 from fastapi import HTTPException, status
@@ -14,45 +11,55 @@ from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate
 
 
-def create_vehicle(db: Session, vehicle_in: VehicleCreate) -> Vehicle:
-    """
-    Create a new vehicle in the database.
+def _format_vehicle_response(vehicle: Vehicle) -> dict:
+    """Helper to convert Vehicle ORM object to response dict with calculated unit profit."""
+    p_price = float(vehicle.purchase_price) if vehicle.purchase_price and vehicle.purchase_price > 0 else round(float(vehicle.price) * 0.75, 2)
+    s_price = float(vehicle.selling_price) if vehicle.selling_price and vehicle.selling_price > 0 else float(vehicle.price)
+    price = s_price
+    profit_per_unit = round(s_price - p_price, 2)
 
-    Args:
-        db: Database session.
-        vehicle_in: Validated vehicle input data.
+    return {
+        "id": vehicle.id,
+        "make": vehicle.make,
+        "model": vehicle.model,
+        "category": vehicle.category,
+        "purchase_price": p_price,
+        "selling_price": s_price,
+        "price": price,
+        "profit_per_unit": profit_per_unit,
+        "quantity": vehicle.quantity,
+        "image_url": vehicle.image_url,
+    }
 
-    Returns:
-        Vehicle: The newly created vehicle ORM object.
+
+def create_vehicle(db: Session, vehicle_in: VehicleCreate) -> dict:
     """
+    Create a new vehicle record with purchase price and selling price.
+    """
+    s_price = float(vehicle_in.selling_price if vehicle_in.selling_price is not None else (vehicle_in.price or 0.0))
+    p_price = float(vehicle_in.purchase_price if vehicle_in.purchase_price is not None else round(s_price * 0.75, 2))
+
     new_vehicle = Vehicle(
         make=vehicle_in.make,
         model=vehicle_in.model,
         category=vehicle_in.category,
-        price=vehicle_in.price,
+        purchase_price=p_price,
+        selling_price=s_price,
+        price=s_price,
         quantity=vehicle_in.quantity,
+        image_url=vehicle_in.image_url,
     )
 
     db.add(new_vehicle)
     db.commit()
     db.refresh(new_vehicle)
 
-    return new_vehicle
+    return _format_vehicle_response(new_vehicle)
 
 
-def get_vehicle(db: Session, vehicle_id: int) -> Vehicle:
+def get_vehicle(db: Session, vehicle_id: int) -> dict:
     """
-    Retrieve a single vehicle by its ID.
-
-    Args:
-        db: Database session.
-        vehicle_id: The ID of the vehicle to retrieve.
-
-    Returns:
-        Vehicle: The found vehicle ORM object.
-
-    Raises:
-        HTTPException 404: If no vehicle exists with the given ID.
+    Retrieve a single vehicle by ID.
     """
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
 
@@ -62,7 +69,7 @@ def get_vehicle(db: Session, vehicle_id: int) -> Vehicle:
             detail=f"Vehicle with id {vehicle_id} not found",
         )
 
-    return vehicle
+    return _format_vehicle_response(vehicle)
 
 
 def get_all_vehicles(
@@ -72,20 +79,9 @@ def get_all_vehicles(
     min_price: float | None = None,
     max_price: float | None = None,
     in_stock_only: bool = False,
-) -> list[Vehicle]:
+) -> list[dict]:
     """
     Retrieve vehicles with optional search, category, price, and stock filtering.
-
-    Args:
-        db: Database session.
-        search: Partial match string for make or model.
-        category: Filter by exact vehicle category.
-        min_price: Minimum price filter.
-        max_price: Maximum price filter.
-        in_stock_only: Filter for vehicles with quantity > 0.
-
-    Returns:
-        list[Vehicle]: Filtered list of vehicle ORM objects.
     """
     query = db.query(Vehicle)
 
@@ -95,7 +91,7 @@ def get_all_vehicles(
             (Vehicle.make.ilike(search_pattern)) | (Vehicle.model.ilike(search_pattern))
         )
 
-    if category:
+    if category and category.lower() != 'all':
         query = query.filter(Vehicle.category.ilike(category))
 
     if min_price is not None:
@@ -107,82 +103,89 @@ def get_all_vehicles(
     if in_stock_only:
         query = query.filter(Vehicle.quantity > 0)
 
-    return query.all()
+    vehicles = query.all()
+    return [_format_vehicle_response(v) for v in vehicles]
 
 
 def get_inventory_summary(db: Session) -> dict:
     """
-    Calculate and return aggregate inventory metrics.
-
-    Metrics include:
-    - total_vehicles: total number of distinct vehicle records
-    - total_quantity: total units in stock across all vehicles
-    - total_inventory_value: total financial valuation (sum of price * quantity)
-    - low_stock_count: number of vehicle items with quantity <= 3
-
-    Returns:
-        dict: Summary statistics dictionary matching InventorySummary schema.
+    Calculate aggregate inventory valuation metrics:
+    - total_vehicles
+    - total_quantity
+    - total_inventory_value (selling value)
+    - total_purchase_cost (cost value)
+    - potential_total_profit (inventory profit margin)
+    - low_stock_count
     """
     vehicles = db.query(Vehicle).all()
 
     total_vehicles = len(vehicles)
     total_quantity = sum(v.quantity for v in vehicles)
-    total_inventory_value = sum(v.price * v.quantity for v in vehicles)
+
+    total_inventory_value = sum(
+        (v.selling_price if v.selling_price > 0 else v.price) * v.quantity
+        for v in vehicles
+    )
+    total_purchase_cost = sum(
+        (v.purchase_price if v.purchase_price > 0 else round(v.price * 0.75, 2)) * v.quantity
+        for v in vehicles
+    )
+    potential_total_profit = total_inventory_value - total_purchase_cost
     low_stock_count = sum(1 for v in vehicles if v.quantity <= 3)
 
     return {
         "total_vehicles": total_vehicles,
         "total_quantity": total_quantity,
         "total_inventory_value": round(total_inventory_value, 2),
+        "total_purchase_cost": round(total_purchase_cost, 2),
+        "potential_total_profit": round(potential_total_profit, 2),
         "low_stock_count": low_stock_count,
     }
 
 
-def update_vehicle(db: Session, vehicle_id: int, vehicle_in: VehicleUpdate) -> Vehicle:
+def update_vehicle(db: Session, vehicle_id: int, vehicle_in: VehicleUpdate) -> dict:
     """
-    Update an existing vehicle with partial data.
-
-    Only fields that are explicitly provided (not None) are updated.
-
-    Args:
-        db: Database session.
-        vehicle_id: The ID of the vehicle to update.
-        vehicle_in: Validated partial update data.
-
-    Returns:
-        Vehicle: The updated vehicle ORM object.
-
-    Raises:
-        HTTPException 404: If no vehicle exists with the given ID.
+    Update an existing vehicle's details including purchase and selling price.
     """
-    vehicle = get_vehicle(db, vehicle_id)
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Vehicle with id {vehicle_id} not found",
+        )
 
-    # Only update fields that were explicitly provided
     update_data = vehicle_in.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(vehicle, field, value)
+
+    if "selling_price" in update_data and update_data["selling_price"] is not None:
+        vehicle.selling_price = float(update_data["selling_price"])
+        vehicle.price = float(update_data["selling_price"])
+    elif "price" in update_data and update_data["price"] is not None:
+        vehicle.selling_price = float(update_data["price"])
+        vehicle.price = float(update_data["price"])
+
+    if "purchase_price" in update_data and update_data["purchase_price"] is not None:
+        vehicle.purchase_price = float(update_data["purchase_price"])
+
+    for field in ["make", "model", "category", "quantity", "image_url"]:
+        if field in update_data and update_data[field] is not None:
+            setattr(vehicle, field, update_data[field])
 
     db.commit()
     db.refresh(vehicle)
 
-    return vehicle
+    return _format_vehicle_response(vehicle)
 
 
 def delete_vehicle(db: Session, vehicle_id: int) -> dict:
     """
     Delete a vehicle from the database.
-
-    Args:
-        db: Database session.
-        vehicle_id: The ID of the vehicle to delete.
-
-    Returns:
-        dict: Confirmation message.
-
-    Raises:
-        HTTPException 404: If no vehicle exists with the given ID.
     """
-    vehicle = get_vehicle(db, vehicle_id)
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Vehicle with id {vehicle_id} not found",
+        )
 
     db.delete(vehicle)
     db.commit()

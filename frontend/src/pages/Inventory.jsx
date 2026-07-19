@@ -1,5 +1,5 @@
 // ==========================================
-// Inventory Management Page
+// Inventory Management Page with Purchase & Sale Price Profit Metrics
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
@@ -14,7 +14,8 @@ import {
   RefreshCw, 
   Car, 
   ArrowUpRight, 
-  ArrowDownRight 
+  ArrowDownRight,
+  TrendingUp
 } from 'lucide-react';
 import './Inventory.css';
 
@@ -95,7 +96,7 @@ export default function Inventory() {
 
     try {
       const res = await purchaseStock(purchaseForm.vehicle_id, qty);
-      showSuccess(`Successfully purchased ${qty} unit(s) of ${res.make} ${res.model}! New Stock: ${res.new_quantity}`);
+      showSuccess(`Successfully processed purchase/sale of ${qty} unit(s) of ${res.make} ${res.model}! New Stock: ${res.new_quantity}`);
       fetchInventory();
     } catch (err) {
       setErrorMessage(err.message || 'Purchase transaction failed');
@@ -149,7 +150,7 @@ export default function Inventory() {
       <div className="page-header">
         <div>
           <h1 className="page-title gradient-text">Inventory Management</h1>
-          <p className="page-subtitle">Perform stock purchases, restock vehicle inventory, and monitor stock levels</p>
+          <p className="page-subtitle">Perform vehicle stock purchases, restock inventory, and view procurement cost & selling price profit margins</p>
         </div>
         <button className="btn btn-secondary icon-only-btn" onClick={fetchInventory} title="Refresh Inventory">
           <RefreshCw size={18} className={loading ? 'spin-icon' : ''} />
@@ -195,7 +196,7 @@ export default function Inventory() {
             <form onSubmit={handlePurchaseSubmit} className="op-form">
               <div className="op-desc">
                 <ArrowDownRight size={18} className="text-danger" />
-                <span>Decreases stock quantity for a vehicle sale.</span>
+                <span>Decreases stock quantity for a vehicle purchase/sale transaction.</span>
               </div>
 
               <div className="form-group">
@@ -210,7 +211,7 @@ export default function Inventory() {
                   >
                     {vehicles.map(v => (
                       <option key={v.id} value={v.id}>
-                        {v.make} {v.model} (#{v.id}) — Available Stock: {v.quantity} units
+                        {v.make} {v.model} (#{v.id}) — Selling: {formatINR(v.selling_price || v.price)} | Stock: {v.quantity} units
                       </option>
                     ))}
                   </select>
@@ -219,7 +220,7 @@ export default function Inventory() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="purchase-quantity">Units to Purchase</label>
+                <label className="form-label" htmlFor="purchase-quantity">Units to Purchase/Sell</label>
                 <div className="input-wrapper">
                   <input
                     id="purchase-quantity"
@@ -243,7 +244,7 @@ export default function Inventory() {
                 {submittingPurchase ? (
                   <>
                     <div className="spinner" />
-                    <span>Processing Purchase...</span>
+                    <span>Processing Transaction...</span>
                   </>
                 ) : (
                   <>
@@ -257,7 +258,7 @@ export default function Inventory() {
             <form onSubmit={handleRestockSubmit} className="op-form">
               <div className="op-desc">
                 <ArrowUpRight size={18} className="text-success" />
-                <span>Increases stock quantity for incoming shipments.</span>
+                <span>Increases stock quantity for incoming vehicle shipments.</span>
               </div>
 
               <div className="form-group">
@@ -272,7 +273,7 @@ export default function Inventory() {
                   >
                     {vehicles.map(v => (
                       <option key={v.id} value={v.id}>
-                        {v.make} {v.model} (#{v.id}) — Current Stock: {v.quantity} units
+                        {v.make} {v.model} (#{v.id}) — Procurement Cost: {formatINR(v.purchase_price || 0)} | Current Stock: {v.quantity} units
                       </option>
                     ))}
                   </select>
@@ -324,7 +325,7 @@ export default function Inventory() {
       <div className="table-card glass-panel">
         <div className="table-card-header">
           <Boxes size={20} className="text-indigo-400" />
-          <h2>Current Vehicle Stock Inventory</h2>
+          <h2>Current Vehicle Stock Inventory & Unit Profit Breakdown</h2>
         </div>
 
         {loading ? (
@@ -346,48 +347,60 @@ export default function Inventory() {
                   <th>ID</th>
                   <th>Vehicle Model</th>
                   <th>Category</th>
-                  <th>Unit Price (₹)</th>
+                  <th>Purchase Cost (₹)</th>
+                  <th>Selling Price (₹)</th>
+                  <th>Profit / Unit (₹)</th>
                   <th>Current Stock</th>
                   <th style={{ textAlign: 'right' }}>Quick Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {vehicles.map(v => (
-                  <tr key={v.id}>
-                    <td className="col-id">#{v.id}</td>
-                    <td>
-                      <div className="vehicle-name">{v.make} {v.model}</div>
-                    </td>
-                    <td>
-                      <span className="category-pill">{v.category}</span>
-                    </td>
-                    <td className="col-price">{formatINR(v.price)}</td>
-                    <td>
-                      <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
-                        {v.quantity} Units {v.quantity === 0 ? '(Out of Stock)' : v.quantity <= 3 ? '(Low Stock)' : ''}
-                      </span>
-                    </td>
-                    <td className="col-actions">
-                      <button
-                        className="btn btn-secondary quick-btn"
-                        onClick={() => handleQuickSelect(v, 'purchase')}
-                        disabled={v.quantity === 0}
-                        title="Purchase stock for this vehicle"
-                      >
-                        <ShoppingCart size={14} />
-                        <span>Purchase</span>
-                      </button>
-                      <button
-                        className="btn btn-secondary quick-btn restock-btn"
-                        onClick={() => handleQuickSelect(v, 'restock')}
-                        title="Restock units for this vehicle"
-                      >
-                        <PlusCircle size={14} />
-                        <span>Restock</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {vehicles.map(v => {
+                  const sPrice = v.selling_price || v.price;
+                  const pPrice = v.purchase_price || (sPrice * 0.75);
+                  const unitProfit = v.profit_per_unit !== undefined ? v.profit_per_unit : (sPrice - pPrice);
+
+                  return (
+                    <tr key={v.id}>
+                      <td className="col-id">#{v.id}</td>
+                      <td>
+                        <div className="vehicle-name">{v.make} {v.model}</div>
+                      </td>
+                      <td>
+                        <span className="category-pill">{v.category}</span>
+                      </td>
+                      <td style={{ color: 'var(--text-muted)' }}>{formatINR(pPrice)}</td>
+                      <td className="col-price">{formatINR(sPrice)}</td>
+                      <td style={{ color: unitProfit >= 0 ? 'var(--accent-emerald)' : 'var(--danger)', fontWeight: 600 }}>
+                        {formatINR(unitProfit)}
+                      </td>
+                      <td>
+                        <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
+                          {v.quantity} Units {v.quantity === 0 ? '(Out of Stock)' : v.quantity <= 3 ? '(Low Stock)' : ''}
+                        </span>
+                      </td>
+                      <td className="col-actions">
+                        <button
+                          className="btn btn-secondary quick-btn"
+                          onClick={() => handleQuickSelect(v, 'purchase')}
+                          disabled={v.quantity === 0}
+                          title="Purchase stock for this vehicle"
+                        >
+                          <ShoppingCart size={14} />
+                          <span>Purchase</span>
+                        </button>
+                        <button
+                          className="btn btn-secondary quick-btn restock-btn"
+                          onClick={() => handleQuickSelect(v, 'restock')}
+                          title="Restock units for this vehicle"
+                        >
+                          <PlusCircle size={14} />
+                          <span>Restock</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -1,5 +1,5 @@
 // ==========================================
-// Sales Management Page (Sales Representative & Administrator)
+// Sales Management Page with Profit Calculation Per Sale
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
@@ -14,7 +14,8 @@ import {
   User, 
   IndianRupee, 
   Boxes,
-  History
+  History,
+  TrendingUp
 } from 'lucide-react';
 import './Sales.css';
 
@@ -49,7 +50,7 @@ export default function Sales() {
         setFormData(prev => ({
           ...prev,
           vehicle_id: String(vData[0].id),
-          unit_price: String(vData[0].price),
+          unit_price: String(vData[0].selling_price || vData[0].price),
         }));
       }
     } catch (err) {
@@ -68,7 +69,7 @@ export default function Sales() {
     setFormData(prev => ({
       ...prev,
       vehicle_id: vId,
-      unit_price: selected ? String(selected.price) : prev.unit_price,
+      unit_price: selected ? String(selected.selling_price || selected.price) : prev.unit_price,
     }));
   };
 
@@ -107,12 +108,12 @@ export default function Sales() {
         unit_price: price,
       });
 
-      showSuccess(`Successfully processed sale of ${qty} unit(s) of ${res.vehicle_make} ${res.vehicle_model} to ${res.customer_name}!`);
+      showSuccess(`Successfully processed sale of ${qty} unit(s) of ${res.vehicle_make} ${res.vehicle_model} to ${res.customer_name}! Profit: ${formatINR(res.profit)}`);
       setFormData({
         vehicle_id: vehicles.length > 0 ? String(vehicles[0].id) : '',
         customer_name: '',
         quantity: '1',
-        unit_price: vehicles.length > 0 ? String(vehicles[0].price) : '',
+        unit_price: vehicles.length > 0 ? String(vehicles[0].selling_price || vehicles[0].price) : '',
       });
       fetchData();
     } catch (err) {
@@ -122,12 +123,20 @@ export default function Sales() {
     }
   };
 
+  // Selected vehicle info for live profit preview
+  const selectedVehicle = vehicles.find(v => String(v.id) === String(formData.vehicle_id));
+  const pPricePreview = selectedVehicle ? (selectedVehicle.purchase_price || (selectedVehicle.price * 0.75)) : 0;
+  const sPriceInput = parseFloat(formData.unit_price) || 0;
+  const qtyInput = parseInt(formData.quantity, 10) || 1;
+  const estProfitPerUnit = sPriceInput - pPricePreview;
+  const estTotalProfit = estProfitPerUnit * qtyInput;
+
   return (
     <div className="sales-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title gradient-text">Vehicle Sales</h1>
-          <p className="page-subtitle">Record customer sales transactions and view complete dealership sales history</p>
+          <h1 className="page-title gradient-text">Vehicle Sales & Profit Records</h1>
+          <p className="page-subtitle">Record customer sales transactions and view complete dealership revenue & profit metrics</p>
         </div>
         <button className="btn btn-secondary icon-only-btn" onClick={fetchData} title="Refresh Sales">
           <RefreshCw size={18} className={loading ? 'spin-icon' : ''} />
@@ -172,7 +181,7 @@ export default function Sales() {
                   ) : (
                     vehicles.map(v => (
                       <option key={v.id} value={v.id}>
-                        {v.make} {v.model} (#{v.id}) — Available: {v.quantity} units
+                        {v.make} {v.model} (#{v.id}) — Cost: {formatINR(v.purchase_price || 0)} | Selling: {formatINR(v.selling_price || v.price)}
                       </option>
                     ))
                   )}
@@ -233,6 +242,34 @@ export default function Sales() {
             </div>
           </div>
 
+          {/* Live Profit Preview */}
+          {selectedVehicle && (
+            <div 
+              style={{
+                marginTop: '1rem',
+                padding: '0.85rem 1.2rem',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <TrendingUp size={18} className="text-emerald-400" />
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Unit Purchase Cost: <strong style={{ color: 'var(--text-primary)' }}>{formatINR(pPricePreview)}</strong>
+                </span>
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Estimated Sale Profit: <strong style={{ color: estTotalProfit >= 0 ? 'var(--accent-emerald)' : 'var(--danger)', fontSize: '0.95rem' }}>{formatINR(estTotalProfit)}</strong>
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
             className="btn btn-primary btn-full"
@@ -258,7 +295,7 @@ export default function Sales() {
       <div className="table-card glass-panel">
         <div className="table-card-header">
           <History size={20} className="text-indigo-400" />
-          <h2>Customer Sales History</h2>
+          <h2>Customer Sales History & Profit Breakdown</h2>
         </div>
 
         {loading ? (
@@ -281,8 +318,10 @@ export default function Sales() {
                   <th>Vehicle</th>
                   <th>Customer Name</th>
                   <th>Units Sold</th>
-                  <th>Unit Price (₹)</th>
+                  <th>Sale Price (₹)</th>
+                  <th>Purchase Cost (₹)</th>
                   <th>Total Sale Amount (₹)</th>
+                  <th>Total Profit (₹)</th>
                   <th>Date</th>
                 </tr>
               </thead>
@@ -294,7 +333,11 @@ export default function Sales() {
                     <td>{s.customer_name}</td>
                     <td>{s.quantity} Units</td>
                     <td>{formatINR(s.unit_price)}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{formatINR(s.unit_cost)}</td>
                     <td className="col-price">{formatINR(s.total_price)}</td>
+                    <td style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>
+                      {formatINR(s.profit)}
+                    </td>
                     <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       {new Date(s.created_at).toLocaleDateString()}
                     </td>

@@ -1,5 +1,5 @@
 // ==========================================
-// Vehicle Management Page with RBAC
+// Vehicle Management Page with Purchase Cost & Selling Price Profit Analytics
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +25,8 @@ import {
   Boxes, 
   IndianRupee, 
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  TrendingUp
 } from 'lucide-react';
 import './Vehicles.css';
 
@@ -65,6 +66,8 @@ export default function Vehicles() {
           total_vehicles: 0,
           total_quantity: 0,
           total_inventory_value: 0,
+          total_purchase_cost: 0,
+          potential_total_profit: 0,
           low_stock_count: 0
         })),
       ]);
@@ -73,6 +76,8 @@ export default function Vehicles() {
         total_vehicles: 0,
         total_quantity: 0,
         total_inventory_value: 0,
+        total_purchase_cost: 0,
+        potential_total_profit: 0,
         low_stock_count: 0
       });
     } catch (err) {
@@ -81,6 +86,8 @@ export default function Vehicles() {
         total_vehicles: 0,
         total_quantity: 0,
         total_inventory_value: 0,
+        total_purchase_cost: 0,
+        potential_total_profit: 0,
         low_stock_count: 0
       });
     } finally {
@@ -128,12 +135,12 @@ export default function Vehicles() {
       <div className="page-header">
         <div>
           <h1 className="page-title gradient-text">
-            {role === 'sales' ? 'Available Vehicles' : 'Vehicle Management'}
+            {role === 'sales' ? 'Available Vehicles' : 'Vehicle & Profit Inventory'}
           </h1>
           <p className="page-subtitle">
             {role === 'sales' 
-              ? 'View current stock availability and specifications' 
-              : 'View, add, edit, and manage dealership car models and pricing'}
+              ? 'View current stock availability and vehicle specifications' 
+              : 'Add vehicles with purchase cost & selling price, manage stock, and track unit profit margins'}
           </p>
         </div>
 
@@ -166,7 +173,7 @@ export default function Vehicles() {
         <div className="summary-grid">
           <div className="summary-card glass-panel">
             <div className="summary-info">
-              <span className="summary-label">Total Models</span>
+              <span className="summary-label">Total Car Models</span>
               <span className="summary-num">{summary.total_vehicles}</span>
             </div>
             <div className="summary-icon indigo">
@@ -176,7 +183,7 @@ export default function Vehicles() {
 
           <div className="summary-card glass-panel">
             <div className="summary-info">
-              <span className="summary-label">Total Units in Stock</span>
+              <span className="summary-label">Total Stock Units</span>
               <span className="summary-num">{summary.total_quantity}</span>
             </div>
             <div className="summary-icon cyan">
@@ -184,24 +191,46 @@ export default function Vehicles() {
             </div>
           </div>
 
-          {/* Hide inventory valuation from Sales Representative */}
+          {/* Show purchase cost & potential profit to Admin & Manager */}
           {role !== 'sales' && (
-            <div className="summary-card glass-panel">
-              <div className="summary-info">
-                <span className="summary-label">Inventory Valuation</span>
-                <span className="summary-num">
-                  {formatINR(summary.total_inventory_value)}
-                </span>
+            <>
+              <div className="summary-card glass-panel">
+                <div className="summary-info">
+                  <span className="summary-label">Total Purchase Cost</span>
+                  <span className="summary-num">{formatINR(summary.total_purchase_cost)}</span>
+                </div>
+                <div className="summary-icon violet">
+                  <IndianRupee size={24} />
+                </div>
               </div>
-              <div className="summary-icon emerald">
-                <IndianRupee size={24} />
+
+              <div className="summary-card glass-panel">
+                <div className="summary-info">
+                  <span className="summary-label">Total Selling Value</span>
+                  <span className="summary-num">{formatINR(summary.total_inventory_value)}</span>
+                </div>
+                <div className="summary-icon cyan">
+                  <IndianRupee size={24} />
+                </div>
               </div>
-            </div>
+
+              <div className="summary-card glass-panel">
+                <div className="summary-info">
+                  <span className="summary-label">Potential Stock Profit</span>
+                  <span className="summary-num" style={{ color: 'var(--accent-emerald)' }}>
+                    {formatINR(summary.potential_total_profit)}
+                  </span>
+                </div>
+                <div className="summary-icon emerald">
+                  <TrendingUp size={24} />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="summary-card glass-panel">
             <div className="summary-info">
-              <span className="summary-label">Low Stock Warning</span>
+              <span className="summary-label">Low Stock Alert</span>
               <span className="summary-num" style={{ color: summary.low_stock_count > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
                 {summary.low_stock_count}
               </span>
@@ -261,7 +290,7 @@ export default function Vehicles() {
         {loading ? (
           <div className="table-loading">
             <div className="spinner" style={{ width: '36px', height: '36px' }} />
-            <p>Loading vehicle records...</p>
+            <p>Loading vehicle inventory records...</p>
           </div>
         ) : vehicles.length === 0 ? (
           <div className="table-empty">
@@ -269,7 +298,7 @@ export default function Vehicles() {
             <h3>No vehicles available</h3>
             <p>
               {canAddEdit 
-                ? "Click 'Add Vehicle' to create your first record."
+                ? "Click 'Add Vehicle' to create your first vehicle entry with purchase cost and selling price."
                 : "No matching vehicles are currently listed."}
             </p>
             {canAddEdit && (
@@ -287,51 +316,69 @@ export default function Vehicles() {
                   <th>ID</th>
                   <th>Vehicle Info</th>
                   <th>Category</th>
-                  <th>Price (₹)</th>
+                  {role !== 'sales' && <th>Purchase Cost (₹)</th>}
+                  <th>Selling Price (₹)</th>
+                  {role !== 'sales' && <th>Profit / Unit (₹)</th>}
                   <th>Stock Quantity</th>
                   {canAddEdit && <th style={{ textAlign: 'right' }}>Actions</th>}
                 </tr>
               </thead>
               <tbody>
-                {vehicles.map(v => (
-                  <tr key={v.id}>
-                    <td className="col-id">#{v.id}</td>
-                    <td className="col-vehicle">
-                      <div className="vehicle-name">{v.make} {v.model}</div>
-                    </td>
-                    <td>
-                      <span className="category-pill">{v.category}</span>
-                    </td>
-                    <td className="col-price">
-                      {formatINR(v.price)}
-                    </td>
-                    <td>
-                      <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
-                        {v.quantity === 0 ? 'Out of Stock (0)' : v.quantity <= 3 ? `Low Stock (${v.quantity})` : `${v.quantity} Units`}
-                      </span>
-                    </td>
-                    {canAddEdit && (
-                      <td className="col-actions">
-                        <button
-                          className="action-btn edit-btn"
-                          title="Edit Vehicle"
-                          onClick={() => { setEditingVehicle(v); setIsModalOpen(true); }}
-                        >
-                          <Edit size={16} />
-                        </button>
-                        {canDelete && (
-                          <button
-                            className="action-btn delete-btn"
-                            title="Delete Vehicle"
-                            onClick={() => setDeletingVehicle(v)}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                {vehicles.map(v => {
+                  const sPrice = v.selling_price || v.price;
+                  const pPrice = v.purchase_price || round(sPrice * 0.75);
+                  const unitProfit = v.profit_per_unit !== undefined ? v.profit_per_unit : (sPrice - pPrice);
+
+                  return (
+                    <tr key={v.id}>
+                      <td className="col-id">#{v.id}</td>
+                      <td className="col-vehicle">
+                        <div className="vehicle-name">{v.make} {v.model}</div>
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td>
+                        <span className="category-pill">{v.category}</span>
+                      </td>
+                      {role !== 'sales' && (
+                        <td style={{ color: 'var(--text-muted)' }}>
+                          {formatINR(pPrice)}
+                        </td>
+                      )}
+                      <td className="col-price">
+                        {formatINR(sPrice)}
+                      </td>
+                      {role !== 'sales' && (
+                        <td style={{ color: unitProfit >= 0 ? 'var(--accent-emerald)' : 'var(--danger)', fontWeight: 600 }}>
+                          {formatINR(unitProfit)}
+                        </td>
+                      )}
+                      <td>
+                        <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
+                          {v.quantity === 0 ? 'Out of Stock (0)' : v.quantity <= 3 ? `Low Stock (${v.quantity})` : `${v.quantity} Units`}
+                        </span>
+                      </td>
+                      {canAddEdit && (
+                        <td className="col-actions">
+                          <button
+                            className="action-btn edit-btn"
+                            title="Edit Vehicle & Pricing"
+                            onClick={() => { setEditingVehicle(v); setIsModalOpen(true); }}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          {canDelete && (
+                            <button
+                              className="action-btn delete-btn"
+                              title="Delete Vehicle"
+                              onClick={() => setDeletingVehicle(v)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

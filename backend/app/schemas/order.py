@@ -19,7 +19,9 @@ class OrderItemResponse(BaseModel):
     vehicle_model: str
     quantity: int
     unit_price: float
+    unit_cost: float | None = 0.0
     subtotal: float
+    profit: float | None = 0.0
 
     class Config:
         from_attributes = True
@@ -34,6 +36,8 @@ class OrderResponse(BaseModel):
     payment_type: str | None = "Token Payment"
     payment_proof: str | None = None
     total_amount: float
+    total_cost: float | None = 0.0
+    total_profit: float | None = 0.0
     amount_paid: float | None = 100000.0
     balance_due: float | None = 0.0
     status: str

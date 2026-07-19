@@ -4,6 +4,7 @@ from sqlalchemy import func
 
 from app.models.sale import Sale
 from app.models.vehicle import Vehicle
+from app.models.order import Order
 from app.models.user import User
 from app.schemas.sale import SaleCreate, ReportsSummary
 
@@ -11,6 +12,7 @@ from app.schemas.sale import SaleCreate, ReportsSummary
 def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> Sale:
     """
     Sells vehicle units, reduces inventory stock, and creates a sale transaction record.
+    Calculates profit based on purchase_price and sale price per unit.
     """
     vehicle = db.query(Vehicle).filter(Vehicle.id == sale_in.vehicle_id).first()
     if not vehicle:
@@ -25,7 +27,7 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> Sale:
             detail=f"Insufficient stock. Only {vehicle.quantity} unit(s) available."
         )
 
-    unit_cost = float(vehicle.price * 0.75)  # 75% of list price as purchase cost base or list price
+    unit_cost = float(vehicle.purchase_price) if vehicle.purchase_price and vehicle.purchase_price > 0 else round(float(vehicle.price) * 0.75, 2)
     unit_price = float(sale_in.unit_price)
     qty = sale_in.quantity
 
@@ -69,13 +71,21 @@ def get_sales_history(db: Session, user_id: int = None) -> list[Sale]:
 def get_reports_summary(db: Session) -> dict:
     """
     Aggregates financial and stock metrics for Administrator Reports Dashboard.
+    Includes both manual sales and online customer orders.
     """
     sales = db.query(Sale).all()
+    orders = db.query(Order).all()
     vehicles = db.query(Vehicle).all()
 
-    total_sales_count = len(sales)
-    total_revenue = round(sum(s.total_price for s in sales), 2)
-    total_purchase_cost = round(sum(s.total_cost for s in sales), 2)
+    sales_revenue = sum(s.total_price for s in sales)
+    sales_cost = sum(s.total_cost for s in sales)
+
+    orders_revenue = sum(o.total_amount for o in orders)
+    orders_cost = sum(o.total_cost or 0.0 for o in orders)
+
+    total_sales_count = len(sales) + len(orders)
+    total_revenue = round(sales_revenue + orders_revenue, 2)
+    total_purchase_cost = round(sales_cost + orders_cost, 2)
     total_profit = round(total_revenue - total_purchase_cost, 2)
 
     available_stock = sum(v.quantity for v in vehicles)
