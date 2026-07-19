@@ -1,13 +1,14 @@
 // ==========================================
-// Dealership Role-Based Dashboard
+// Dealership Role-Based Dashboard & Storefront
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getVehicles, getInventorySummary } from '../api/vehicles';
+import { getInventorySummary } from '../api/vehicles';
 import { getUsers } from '../api/users';
 import { getSales } from '../api/sales';
 import { formatINR } from '../utils/formatters';
+import CustomerProducts from './CustomerProducts';
 import { 
   Car, 
   Boxes, 
@@ -25,14 +26,19 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const userRole = (user?.role || 'sales').toLowerCase();
-  const role = userRole.includes('admin') ? 'admin' : userRole.includes('manager') ? 'manager' : 'sales';
+  const userRole = (user?.role || 'customer').toLowerCase();
+  let role = 'customer';
+  if (userRole.includes('admin')) role = 'admin';
+  else if (userRole.includes('manager')) role = 'manager';
+  else if (userRole.includes('sales')) role = 'sales';
 
   const [summary, setSummary] = useState(null);
   const [userCount, setUserCount] = useState(0);
   const [salesCount, setSalesCount] = useState(0);
 
   useEffect(() => {
+    if (role === 'customer') return;
+
     const loadDashboardData = async () => {
       try {
         const sData = await getInventorySummary().catch(() => null);
@@ -53,6 +59,11 @@ export default function Dashboard() {
     };
     loadDashboardData();
   }, [role]);
+
+  // General Customer User -> Render Customer Storefront & Catalog!
+  if (role === 'customer') {
+    return <CustomerProducts />;
+  }
 
   return (
     <div className="dashboard-page">
@@ -76,8 +87,6 @@ export default function Dashboard() {
           <ShieldCheck size={48} className="shield-icon" />
         </div>
       </div>
-
-      {/* Role-Based Widgets */}
 
       {/* Administrator Dashboard Widgets */}
       {role === 'admin' && (

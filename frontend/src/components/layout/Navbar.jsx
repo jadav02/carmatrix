@@ -1,15 +1,21 @@
 // ==========================================
-// Top Navigation Bar Component with Theme Toggle
+// Top Navigation Bar Component with Cart & Theme
 // ==========================================
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { LogOut, User as UserIcon, Shield, Menu, Sun, Moon } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
+import { useNavigate } from 'react-router-dom';
+import { LogOut, User as UserIcon, Shield, Menu, Sun, Moon, ShoppingBag } from 'lucide-react';
 import './Navbar.css';
 
 export default function Navbar({ onToggleSidebar }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { getCartCount } = useCart();
+  const navigate = useNavigate();
+
+  const cartCount = getCartCount();
 
   return (
     <header className="navbar">
@@ -27,6 +33,19 @@ export default function Navbar({ onToggleSidebar }) {
       </div>
 
       <div className="navbar-right">
+        {/* Shopping Cart Button with Count Badge */}
+        <button
+          className="theme-toggle-btn cart-nav-btn"
+          onClick={() => navigate('/cart')}
+          title="View Shopping Cart"
+          style={{ position: 'relative' }}
+        >
+          <ShoppingBag size={20} />
+          {cartCount > 0 && (
+            <span className="cart-badge">{cartCount}</span>
+          )}
+        </button>
+
         {/* Sun / Moon Theme Toggle */}
         <button 
           className="theme-toggle-btn"
@@ -45,7 +64,7 @@ export default function Navbar({ onToggleSidebar }) {
               <span className="user-name">{user.name}</span>
               <span className="user-role">
                 <Shield size={12} />
-                {user.role || 'Sales Representative'}
+                {user.role === 'customer' ? 'Customer' : (user.role || 'Sales Representative')}
               </span>
             </div>
           </div>

@@ -1,20 +1,22 @@
 // ==========================================
-// Register Page Component with RBAC Approval Notification
+// Register Page Component with Customer & Staff Roles
 // ==========================================
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../api/auth';
-import { User, Mail, Lock, Shield, UserPlus, AlertCircle, CheckCircle, Eye, EyeOff, Car, Clock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { User, Mail, Lock, Shield, UserPlus, AlertCircle, Eye, EyeOff, Car, Clock, Sparkles } from 'lucide-react';
 import './Auth.css';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'sales',
+    role: 'customer',
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -49,7 +51,14 @@ export default function Register() {
 
     try {
       const res = await registerUser(formData);
-      setSuccessMessage(res.message || 'Your account is waiting for administrator approval.');
+      
+      // If Customer role, automatically log them in!
+      if (formData.role === 'customer') {
+        await login(formData.email, formData.password);
+        navigate('/dashboard', { replace: true });
+      } else {
+        setSuccessMessage(res.message || 'Your account is waiting for administrator approval.');
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -67,13 +76,13 @@ export default function Register() {
             <Car size={36} className="auth-logo-icon" />
           </div>
           <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Register to join the dealership management system</p>
+          <p className="auth-subtitle">Register to browse, purchase, or manage dealership vehicles</p>
         </div>
 
         {successMessage ? (
           <div className="alert alert-success" style={{ flexDirection: 'column', textAlign: 'center', gap: '0.75rem', padding: '1.5rem' }}>
             <Clock size={32} style={{ color: '#f59e0b', margin: '0 auto' }} />
-            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Pending Approval</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Pending Administrator Approval</h3>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               {successMessage}
             </p>
@@ -103,7 +112,7 @@ export default function Register() {
                     type="text"
                     name="name"
                     className="form-input"
-                    placeholder="John Doe"
+                    placeholder="Rahul Sharma"
                     value={formData.name}
                     onChange={handleChange}
                     required
@@ -120,7 +129,7 @@ export default function Register() {
                     type="email"
                     name="email"
                     className="form-input"
-                    placeholder="john@dealership.com"
+                    placeholder="rahul@example.com"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -157,7 +166,7 @@ export default function Register() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="register-role">Requested System Role</label>
+                <label className="form-label" htmlFor="register-role">Account Type</label>
                 <div className="input-wrapper">
                   <select
                     id="register-role"
@@ -166,12 +175,18 @@ export default function Register() {
                     value={formData.role}
                     onChange={handleChange}
                   >
-                    <option value="sales">Sales Representative</option>
-                    <option value="manager">Inventory Manager</option>
-                    <option value="admin">Administrator</option>
+                    <option value="customer">Customer / Buyer (Instant Access)</option>
+                    <option value="sales">Sales Representative (Requires Approval)</option>
+                    <option value="manager">Inventory Manager (Requires Approval)</option>
+                    <option value="admin">Administrator (Requires Approval)</option>
                   </select>
                   <Shield className="input-icon" size={18} />
                 </div>
+                {formData.role === 'customer' && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Sparkles size={14} /> Instant Access — Start shopping immediately upon sign up!
+                  </span>
+                )}
               </div>
 
               <button
@@ -183,7 +198,7 @@ export default function Register() {
                 {submitting ? (
                   <>
                     <div className="spinner" />
-                    <span>Submitting Registration...</span>
+                    <span>Creating Account...</span>
                   </>
                 ) : (
                   <>
