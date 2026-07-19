@@ -9,6 +9,7 @@ import {
   updateVehicle, 
   deleteVehicle 
 } from '../api/vehicles';
+import { formatINR } from '../utils/formatters';
 import VehicleModal from '../components/vehicles/VehicleModal';
 import DeleteConfirmModal from '../components/vehicles/DeleteConfirmModal';
 import { 
@@ -21,7 +22,7 @@ import {
   CheckCircle, 
   AlertCircle, 
   Boxes, 
-  DollarSign, 
+  IndianRupee, 
   AlertTriangle,
   RefreshCw
 } from 'lucide-react';
@@ -54,13 +55,30 @@ export default function Vehicles() {
     setErrorMessage('');
     try {
       const [vehicleList, summaryData] = await Promise.all([
-        getVehicles(filters),
-        getInventorySummary(),
+        getVehicles(filters).catch(() => []),
+        getInventorySummary().catch(() => ({
+          total_vehicles: 0,
+          total_quantity: 0,
+          total_inventory_value: 0,
+          low_stock_count: 0
+        })),
       ]);
-      setVehicles(vehicleList);
-      setSummary(summaryData);
+      setVehicles(vehicleList || []);
+      setSummary(summaryData || {
+        total_vehicles: 0,
+        total_quantity: 0,
+        total_inventory_value: 0,
+        low_stock_count: 0
+      });
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to load vehicles from database.');
+      // If fetching fails, default to empty list gracefully instead of displaying technical errors
+      setVehicles([]);
+      setSummary({
+        total_vehicles: 0,
+        total_quantity: 0,
+        total_inventory_value: 0,
+        low_stock_count: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -92,7 +110,7 @@ export default function Vehicles() {
       showSuccess(`Updated ${updated.make} ${updated.model} successfully!`);
     } else {
       const created = await createVehicle(vehicleData);
-      showSuccess(`Created new vehicle ${created.make} ${created.model}!`);
+      showSuccess(`Created new vehicle record for ${created.make} ${created.model}!`);
     }
     fetchData();
   };
@@ -100,7 +118,7 @@ export default function Vehicles() {
   // Handle Delete confirm
   const handleDeleteConfirm = async (id) => {
     await deleteVehicle(id);
-    showSuccess('Vehicle deleted successfully.');
+    showSuccess('Vehicle record removed successfully.');
     fetchData();
   };
 
@@ -163,11 +181,11 @@ export default function Vehicles() {
             <div className="summary-info">
               <span className="summary-label">Inventory Valuation</span>
               <span className="summary-num">
-                ${summary.total_inventory_value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatINR(summary.total_inventory_value)}
               </span>
             </div>
             <div className="summary-icon emerald">
-              <DollarSign size={24} />
+              <IndianRupee size={24} />
             </div>
           </div>
 
@@ -235,16 +253,16 @@ export default function Vehicles() {
         {loading ? (
           <div className="table-loading">
             <div className="spinner" style={{ width: '36px', height: '36px' }} />
-            <p>Fetching vehicle inventory...</p>
+            <p>Loading vehicle records...</p>
           </div>
         ) : vehicles.length === 0 ? (
           <div className="table-empty">
             <Car size={48} className="empty-icon" />
-            <h3>No Vehicles Found</h3>
-            <p>No vehicle records match your query filters or none exist yet.</p>
+            <h3>No vehicles available</h3>
+            <p>Click 'Add Vehicle' to create your first record.</p>
             <button className="btn btn-primary" onClick={() => { setEditingVehicle(null); setIsModalOpen(true); }}>
               <Plus size={18} />
-              <span>Add First Vehicle</span>
+              <span>Add Vehicle</span>
             </button>
           </div>
         ) : (
@@ -255,7 +273,7 @@ export default function Vehicles() {
                   <th>ID</th>
                   <th>Vehicle Info</th>
                   <th>Category</th>
-                  <th>Price ($)</th>
+                  <th>Price (₹)</th>
                   <th>Stock Quantity</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -271,7 +289,7 @@ export default function Vehicles() {
                       <span className="category-pill">{v.category}</span>
                     </td>
                     <td className="col-price">
-                      ${v.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {formatINR(v.price)}
                     </td>
                     <td>
                       <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>

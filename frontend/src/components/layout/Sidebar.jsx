@@ -51,8 +51,8 @@ export default function Sidebar({ isOpen }) {
         <div className="pro-card">
           <Sparkles className="pro-icon" size={20} />
           <div className="pro-info">
-            <span className="pro-title">System Status</span>
-            <span className="pro-desc">FastAPI Backend Connected</span>
+            <span className="pro-title">Connection Status</span>
+            <span className="pro-desc">System Online</span>
           </div>
         </div>
       </div>

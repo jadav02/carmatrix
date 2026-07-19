@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
 import { purchaseStock, restockStock } from '../api/inventory';
+import { formatINR } from '../utils/formatters';
 import { 
   Boxes, 
   ShoppingCart, 
@@ -39,9 +40,9 @@ export default function Inventory() {
     setErrorMessage('');
     try {
       const data = await getVehicles();
-      setVehicles(data);
+      setVehicles(data || []);
 
-      if (data.length > 0) {
+      if (data && data.length > 0) {
         const firstId = String(data[0].id);
         const purchaseValid = data.some(v => String(v.id) === purchaseForm.vehicle_id);
         if (!purchaseValid) {
@@ -53,7 +54,8 @@ export default function Inventory() {
         }
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to fetch inventory stock');
+      setVehicles([]);
+      setErrorMessage('');
     } finally {
       setLoading(false);
     }
@@ -334,7 +336,7 @@ export default function Inventory() {
           <div className="table-empty">
             <Boxes size={48} className="empty-icon" />
             <h3>No Inventory Items Available</h3>
-            <p>Add vehicles to the database to manage stock purchases and restocking.</p>
+            <p>Add vehicles to the system to manage stock purchases and restocking.</p>
           </div>
         ) : (
           <div className="table-responsive">
@@ -344,7 +346,7 @@ export default function Inventory() {
                   <th>ID</th>
                   <th>Vehicle Model</th>
                   <th>Category</th>
-                  <th>Unit Price</th>
+                  <th>Unit Price (₹)</th>
                   <th>Current Stock</th>
                   <th style={{ textAlign: 'right' }}>Quick Actions</th>
                 </tr>
@@ -359,7 +361,7 @@ export default function Inventory() {
                     <td>
                       <span className="category-pill">{v.category}</span>
                     </td>
-                    <td className="col-price">${v.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="col-price">{formatINR(v.price)}</td>
                     <td>
                       <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
                         {v.quantity} Units {v.quantity === 0 ? '(Out of Stock)' : v.quantity <= 3 ? '(Low Stock)' : ''}

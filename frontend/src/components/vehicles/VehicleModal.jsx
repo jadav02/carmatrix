@@ -2,7 +2,7 @@
 // Vehicle Add/Edit Modal Form
 // ==========================================
 import React, { useState, useEffect } from 'react';
-import { X, Save, Car, DollarSign, Layers, Hash, AlertCircle } from 'lucide-react';
+import { X, Save, Car, IndianRupee, Layers, Hash, AlertCircle } from 'lucide-react';
 import './VehicleModal.css';
 
 const CATEGORIES = ['Sedan', 'SUV', 'Truck', 'Coupe', 'Electric', 'Hybrid', 'Convertible', 'Wagon', 'Van'];
@@ -119,7 +119,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
                   type="text"
                   name="make"
                   className="form-input"
-                  placeholder="e.g. Toyota, Tesla"
+                  placeholder="e.g. Toyota, Tata, Hyundai"
                   value={formData.make}
                   onChange={handleChange}
                   required
@@ -136,7 +136,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
                   type="text"
                   name="model"
                   className="form-input"
-                  placeholder="e.g. Camry, Model Y"
+                  placeholder="e.g. Harrier, Creta, City"
                   value={formData.model}
                   onChange={handleChange}
                   required
@@ -164,21 +164,21 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="vehicle-price">Price ($)</label>
+              <label className="form-label" htmlFor="vehicle-price">Price (₹)</label>
               <div className="input-wrapper">
                 <input
                   id="vehicle-price"
                   type="number"
                   name="price"
-                  step="0.01"
-                  min="0.01"
+                  step="1"
+                  min="1"
                   className="form-input"
-                  placeholder="25000.00"
+                  placeholder="1250000"
                   value={formData.price}
                   onChange={handleChange}
                   required
                 />
-                <DollarSign className="input-icon" size={18} />
+                <IndianRupee className="input-icon" size={18} />
               </div>
             </div>
 
