@@ -1,5 +1,5 @@
 // ==========================================
-// Register Page Component with Customer & Staff Roles
+// Register Page Component with Default General User Role
 // ==========================================
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -16,7 +16,7 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    role: 'customer',
+    role: 'customer', // Default role for general users
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -52,7 +52,7 @@ export default function Register() {
     try {
       const res = await registerUser(formData);
       
-      // If Customer role, automatically log them in!
+      // If General User / Customer, automatically log in!
       if (formData.role === 'customer') {
         await login(formData.email, formData.password);
         navigate('/dashboard', { replace: true });
@@ -112,7 +112,7 @@ export default function Register() {
                     type="text"
                     name="name"
                     className="form-input"
-                    placeholder="Rahul Sharma"
+                    placeholder="John Doe"
                     value={formData.name}
                     onChange={handleChange}
                     required
@@ -129,7 +129,7 @@ export default function Register() {
                     type="email"
                     name="email"
                     className="form-input"
-                    placeholder="rahul@example.com"
+                    placeholder="john@example.com"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -175,7 +175,7 @@ export default function Register() {
                     value={formData.role}
                     onChange={handleChange}
                   >
-                    <option value="customer">Customer / Buyer (Instant Access)</option>
+                    <option value="customer">User (General User / Buyer)</option>
                     <option value="sales">Sales Representative (Requires Approval)</option>
                     <option value="manager">Inventory Manager (Requires Approval)</option>
                     <option value="admin">Administrator (Requires Approval)</option>
