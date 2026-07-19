@@ -1,13 +1,15 @@
 // ==========================================
-// Top Navigation Bar Component
+// Top Navigation Bar Component with Theme Toggle
 // ==========================================
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, User as UserIcon, Shield, Menu } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { LogOut, User as UserIcon, Shield, Menu, Sun, Moon } from 'lucide-react';
 import './Navbar.css';
 
 export default function Navbar({ onToggleSidebar }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="navbar">
@@ -25,6 +27,15 @@ export default function Navbar({ onToggleSidebar }) {
       </div>
 
       <div className="navbar-right">
+        {/* Sun / Moon Theme Toggle */}
+        <button 
+          className="theme-toggle-btn"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
         {user && (
           <div className="user-profile-badge">
             <div className="avatar">
