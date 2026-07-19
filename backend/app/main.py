@@ -1,5 +1,5 @@
 # ==========================================
-# CarMatrix API — Main Entry Point with Auto-Migration & Car Image URLs
+# CarMatrix API — Main Entry Point with Auto-Migration & Order Payment Token Logic
 # ==========================================
 
 import random
@@ -42,12 +42,12 @@ app.add_middleware(
 )
 
 SAMPLE_CAR_IMAGES = [
-    "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&auto=format&fit=crop&q=80", # Toyota Sedan
-    "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80", # SUV
-    "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=600&auto=format&fit=crop&q=80", # Civic / Sedan
-    "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&auto=format&fit=crop&q=80", # Tesla / EV
-    "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=600&auto=format&fit=crop&q=80", # Porsche / Supercar
-    "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&auto=format&fit=crop&q=80", # Mercedes / Luxury
+    "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=600&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=600&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&auto=format&fit=crop&q=80",
 ]
 
 @app.on_event("startup")
@@ -57,29 +57,31 @@ def on_startup():
 
     # Auto-migrate SQLite schema
     with engine.connect() as conn:
-        # Check users status
         res_users = conn.execute(text("PRAGMA table_info(users)")).fetchall()
         user_cols = [row[1] for row in res_users]
         if "status" not in user_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'Approved'"))
 
-        # Check vehicles image_url
         res_veh = conn.execute(text("PRAGMA table_info(vehicles)")).fetchall()
         veh_cols = [row[1] for row in res_veh]
         if "image_url" not in veh_cols:
             conn.execute(text("ALTER TABLE vehicles ADD COLUMN image_url VARCHAR(500)"))
 
-        # Check orders payment_proof
         res_ord = conn.execute(text("PRAGMA table_info(orders)")).fetchall()
         ord_cols = [row[1] for row in res_ord]
         if "payment_proof" not in ord_cols:
             conn.execute(text("ALTER TABLE orders ADD COLUMN payment_proof VARCHAR(500)"))
+        if "payment_type" not in ord_cols:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Token Payment'"))
+        if "amount_paid" not in ord_cols:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN amount_paid FLOAT DEFAULT 100000.0"))
+        if "balance_due" not in ord_cols:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN balance_due FLOAT DEFAULT 0.0"))
 
         conn.commit()
 
     db: Session = SessionLocal()
     try:
-        # Seed initial Administrator if no Admin exists
         admin_user = db.query(User).filter(User.role == "admin").first()
         if not admin_user:
             seeded_admin = User(
@@ -92,7 +94,6 @@ def on_startup():
             db.add(seeded_admin)
             db.commit()
 
-        # Update vehicle prices (> 100,000,000 INR) and image_urls
         vehicles = db.query(Vehicle).all()
         base_prices = [125000000.0, 185000000.0, 240000000.0, 310000000.0, 145000000.0, 220000000.0, 295000000.0]
         for idx, v in enumerate(vehicles):

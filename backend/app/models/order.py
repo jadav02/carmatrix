@@ -22,8 +22,13 @@ class Order(Base):
     customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
     shipping_address: Mapped[str] = mapped_column(String(255), nullable=False)
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
+    payment_type: Mapped[str | None] = mapped_column(String(50), default="Token Payment", nullable=True)
     payment_proof: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    
     total_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount_paid: Mapped[float | None] = mapped_column(Float, default=100000.0, nullable=True)
+    balance_due: Mapped[float | None] = mapped_column(Float, default=0.0, nullable=True)
+    
     status: Mapped[str] = mapped_column(String(20), default="Completed", nullable=False)
     
     created_at: Mapped[datetime] = mapped_column(

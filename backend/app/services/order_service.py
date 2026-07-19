@@ -10,7 +10,7 @@ from app.schemas.order import OrderCheckoutRequest
 def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user: User) -> Order:
     """
     Processes customer checkout: validates vehicle stock, reduces inventory,
-    calculates totals, saves payment proof, and records the purchase transaction.
+    calculates token/full payments, saves payment proof screenshot, and records purchase.
     """
     total_amount = 0.0
     order_items_to_create = []
@@ -45,14 +45,25 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
             "subtotal": subtotal,
         })
 
+    pay_type = checkout_in.payment_type or "Token Payment"
+    if "Token" in pay_type or "UPI" in checkout_in.payment_method:
+        amt_paid = 100000.0
+        bal_due = max(0.0, round(total_amount - 100000.0, 2))
+    else:
+        amt_paid = round(total_amount, 2)
+        bal_due = 0.0
+
     new_order = Order(
         user_id=current_user.id,
         customer_name=current_user.name,
         customer_email=current_user.email,
         shipping_address=checkout_in.shipping_address,
         payment_method=checkout_in.payment_method,
+        payment_type=pay_type,
         payment_proof=checkout_in.payment_proof,
         total_amount=round(total_amount, 2),
+        amount_paid=amt_paid,
+        balance_due=bal_due,
         status="Completed",
     )
 
