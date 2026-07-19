@@ -1,2 +1,3 @@
-# services package
-# Contains business logic, separate from route handlers.
+from app.services.auth_service import register_user
+
+__all__ = ["register_user"]
