@@ -1,12 +1,5 @@
 // ==========================================
-// Main Application Component
-// ==========================================
-// Configures React Router & Application Routes:
-//   - /login      : Public authentication page
-//   - /register   : Public user registration page
-//   - /dashboard  : Protected dashboard home
-//   - /vehicles   : Protected vehicle management (CRUD)
-//   - /inventory  : Protected inventory stock management
+// Main Application Component with RBAC Routes
 // ==========================================
 
 import React from 'react';
@@ -19,6 +12,10 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Vehicles from './pages/Vehicles';
 import Inventory from './pages/Inventory';
+import Users from './pages/Users';
+import Sales from './pages/Sales';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -32,9 +29,27 @@ export default function App() {
           {/* Protected Application Routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
+              {/* All Roles */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/vehicles" element={<Vehicles />} />
-              <Route path="/inventory" element={<Inventory />} />
+
+              {/* Administrator & Inventory Manager */}
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+                <Route path="/inventory" element={<Inventory />} />
+              </Route>
+
+              {/* Administrator & Sales Representative */}
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'sales']} />}>
+                <Route path="/sales" element={<Sales />} />
+              </Route>
+
+              {/* Administrator Only */}
+              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                <Route path="/users" element={<Users />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
+
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>

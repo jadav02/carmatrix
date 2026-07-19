@@ -1,15 +1,14 @@
 // ==========================================
-// Register Page Component
+// Register Page Component with RBAC Approval Notification
 // ==========================================
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { User, Mail, Lock, Shield, UserPlus, AlertCircle, Eye, EyeOff, Car } from 'lucide-react';
+import { registerUser } from '../api/auth';
+import { User, Mail, Lock, Shield, UserPlus, AlertCircle, CheckCircle, Eye, EyeOff, Car, Clock } from 'lucide-react';
 import './Auth.css';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -20,6 +19,7 @@ export default function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e) => {
@@ -45,10 +45,11 @@ export default function Register() {
 
     setSubmitting(true);
     setErrorMessage('');
+    setSuccessMessage('');
 
     try {
-      await register(formData);
-      navigate('/dashboard', { replace: true });
+      const res = await registerUser(formData);
+      setSuccessMessage(res.message || 'Your account is waiting for administrator approval.');
     } catch (err) {
       setErrorMessage(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -69,121 +70,140 @@ export default function Register() {
           <p className="auth-subtitle">Register to join the dealership management system</p>
         </div>
 
-        {errorMessage && (
-          <div className="alert alert-danger">
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-            <span>{errorMessage}</span>
+        {successMessage ? (
+          <div className="alert alert-success" style={{ flexDirection: 'column', textAlign: 'center', gap: '0.75rem', padding: '1.5rem' }}>
+            <Clock size={32} style={{ color: '#f59e0b', margin: '0 auto' }} />
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Pending Approval</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              {successMessage}
+            </p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => navigate('/login')}
+              style={{ marginTop: '0.5rem' }}
+            >
+              Return to Login
+            </button>
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-name">Full Name</label>
-            <div className="input-wrapper">
-              <input
-                id="register-name"
-                type="text"
-                name="name"
-                className="form-input"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-              <User className="input-icon" size={18} />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-email">Email Address</label>
-            <div className="input-wrapper">
-              <input
-                id="register-email"
-                type="email"
-                name="email"
-                className="form-input"
-                placeholder="john@dealership.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                autoComplete="email"
-              />
-              <Mail className="input-icon" size={18} />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-password">Password</label>
-            <div className="input-wrapper">
-              <input
-                id="register-password"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                className="form-input"
-                placeholder="Minimum 6 characters"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-              />
-              <Lock className="input-icon" size={18} />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-role">System Role</label>
-            <div className="input-wrapper">
-              <select
-                id="register-role"
-                name="role"
-                className="form-input select-input"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                <option value="sales">Sales Representative</option>
-                <option value="manager">Inventory Manager</option>
-                <option value="admin">Administrator</option>
-              </select>
-              <Shield className="input-icon" size={18} />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={submitting}
-            style={{ marginTop: '0.75rem' }}
-          >
-            {submitting ? (
-              <>
-                <div className="spinner" />
-                <span>Creating account...</span>
-              </>
-            ) : (
-              <>
-                <UserPlus size={18} />
-                <span>Register Account</span>
-              </>
+        ) : (
+          <>
+            {errorMessage && (
+              <div className="alert alert-danger">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{errorMessage}</span>
+              </div>
             )}
-          </button>
-        </form>
 
-        <div className="auth-footer">
-          <p>
-            Already have an account?{' '}
-            <Link to="/login" className="auth-link">
-              Sign in instead
-            </Link>
-          </p>
-        </div>
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-group">
+                <label className="form-label" htmlFor="register-name">Full Name</label>
+                <div className="input-wrapper">
+                  <input
+                    id="register-name"
+                    type="text"
+                    name="name"
+                    className="form-input"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                  <User className="input-icon" size={18} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="register-email">Email Address</label>
+                <div className="input-wrapper">
+                  <input
+                    id="register-email"
+                    type="email"
+                    name="email"
+                    className="form-input"
+                    placeholder="john@dealership.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    autoComplete="email"
+                  />
+                  <Mail className="input-icon" size={18} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="register-password">Password</label>
+                <div className="input-wrapper">
+                  <input
+                    id="register-password"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    className="form-input"
+                    placeholder="Minimum 6 characters"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    autoComplete="new-password"
+                  />
+                  <Lock className="input-icon" size={18} />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="register-role">Requested System Role</label>
+                <div className="input-wrapper">
+                  <select
+                    id="register-role"
+                    name="role"
+                    className="form-input select-input"
+                    value={formData.role}
+                    onChange={handleChange}
+                  >
+                    <option value="sales">Sales Representative</option>
+                    <option value="manager">Inventory Manager</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                  <Shield className="input-icon" size={18} />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-full"
+                disabled={submitting}
+                style={{ marginTop: '0.75rem' }}
+              >
+                {submitting ? (
+                  <>
+                    <div className="spinner" />
+                    <span>Submitting Registration...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={18} />
+                    <span>Register Account</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="auth-footer">
+              <p>
+                Already have an account?{' '}
+                <Link to="/login" className="auth-link">
+                  Sign in instead
+                </Link>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

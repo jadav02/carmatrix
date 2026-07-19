@@ -1,0 +1,23 @@
+.sales-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sell-form-card {
+  padding: 1.75rem;
+  border-radius: var(--radius-xl);
+}
+
+.sell-form-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.sell-form-card .card-title h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}

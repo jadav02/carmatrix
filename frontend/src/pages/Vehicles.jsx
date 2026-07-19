@@ -1,7 +1,8 @@
 // ==========================================
-// Vehicle Management Page
+// Vehicle Management Page with RBAC
 // ==========================================
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { 
   getVehicles, 
   getInventorySummary, 
@@ -31,25 +32,29 @@ import './Vehicles.css';
 const CATEGORIES = ['All', 'Sedan', 'SUV', 'Truck', 'Coupe', 'Electric', 'Hybrid', 'Convertible', 'Wagon', 'Van'];
 
 export default function Vehicles() {
+  const { user } = useAuth();
+  const userRole = (user?.role || 'sales').toLowerCase();
+  const role = userRole.includes('admin') ? 'admin' : userRole.includes('manager') ? 'manager' : 'sales';
+
+  const canAddEdit = role === 'admin' || role === 'manager';
+  const canDelete = role === 'admin';
+
   const [vehicles, setVehicles] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Filters state
   const [filters, setFilters] = useState({
     search: '',
     category: 'All',
     in_stock_only: false,
   });
 
-  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [deletingVehicle, setDeletingVehicle] = useState(null);
 
-  // Fetch vehicles & summary data
   const fetchData = async () => {
     setLoading(true);
     setErrorMessage('');
@@ -71,7 +76,6 @@ export default function Vehicles() {
         low_stock_count: 0
       });
     } catch (err) {
-      // If fetching fails, default to empty list gracefully instead of displaying technical errors
       setVehicles([]);
       setSummary({
         total_vehicles: 0,
@@ -97,13 +101,11 @@ export default function Vehicles() {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  // Toast message helper
   const showSuccess = (msg) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(''), 4000);
   };
 
-  // Handle Add / Edit save
   const handleSaveVehicle = async (vehicleData) => {
     if (editingVehicle) {
       const updated = await updateVehicle(editingVehicle.id, vehicleData);
@@ -115,7 +117,6 @@ export default function Vehicles() {
     fetchData();
   };
 
-  // Handle Delete confirm
   const handleDeleteConfirm = async (id) => {
     await deleteVehicle(id);
     showSuccess('Vehicle record removed successfully.');
@@ -124,22 +125,29 @@ export default function Vehicles() {
 
   return (
     <div className="vehicles-page">
-      {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title gradient-text">Vehicle Management</h1>
-          <p className="page-subtitle">View, add, edit, and manage dealership car models and pricing</p>
+          <h1 className="page-title gradient-text">
+            {role === 'sales' ? 'Available Vehicles' : 'Vehicle Management'}
+          </h1>
+          <p className="page-subtitle">
+            {role === 'sales' 
+              ? 'View current stock availability and specifications' 
+              : 'View, add, edit, and manage dealership car models and pricing'}
+          </p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => { setEditingVehicle(null); setIsModalOpen(true); }}
-        >
-          <Plus size={18} />
-          <span>Add Vehicle</span>
-        </button>
+
+        {canAddEdit && (
+          <button 
+            className="btn btn-primary"
+            onClick={() => { setEditingVehicle(null); setIsModalOpen(true); }}
+          >
+            <Plus size={18} />
+            <span>Add Vehicle</span>
+          </button>
+        )}
       </div>
 
-      {/* Notifications */}
       {successMessage && (
         <div className="alert alert-success">
           <CheckCircle size={18} style={{ flexShrink: 0 }} />
@@ -154,7 +162,6 @@ export default function Vehicles() {
         </div>
       )}
 
-      {/* Summary Cards */}
       {summary && (
         <div className="summary-grid">
           <div className="summary-card glass-panel">
@@ -177,17 +184,20 @@ export default function Vehicles() {
             </div>
           </div>
 
-          <div className="summary-card glass-panel">
-            <div className="summary-info">
-              <span className="summary-label">Inventory Valuation</span>
-              <span className="summary-num">
-                {formatINR(summary.total_inventory_value)}
-              </span>
+          {/* Hide inventory valuation from Sales Representative */}
+          {role !== 'sales' && (
+            <div className="summary-card glass-panel">
+              <div className="summary-info">
+                <span className="summary-label">Inventory Valuation</span>
+                <span className="summary-num">
+                  {formatINR(summary.total_inventory_value)}
+                </span>
+              </div>
+              <div className="summary-icon emerald">
+                <IndianRupee size={24} />
+              </div>
             </div>
-            <div className="summary-icon emerald">
-              <IndianRupee size={24} />
-            </div>
-          </div>
+          )}
 
           <div className="summary-card glass-panel">
             <div className="summary-info">
@@ -203,7 +213,6 @@ export default function Vehicles() {
         </div>
       )}
 
-      {/* Search and Filters Bar */}
       <div className="controls-bar glass-panel">
         <form onSubmit={handleSearchSubmit} className="search-box">
           <input
@@ -248,7 +257,6 @@ export default function Vehicles() {
         </div>
       </div>
 
-      {/* Vehicles Table */}
       <div className="table-card glass-panel">
         {loading ? (
           <div className="table-loading">
@@ -259,11 +267,17 @@ export default function Vehicles() {
           <div className="table-empty">
             <Car size={48} className="empty-icon" />
             <h3>No vehicles available</h3>
-            <p>Click 'Add Vehicle' to create your first record.</p>
-            <button className="btn btn-primary" onClick={() => { setEditingVehicle(null); setIsModalOpen(true); }}>
-              <Plus size={18} />
-              <span>Add Vehicle</span>
-            </button>
+            <p>
+              {canAddEdit 
+                ? "Click 'Add Vehicle' to create your first record."
+                : "No matching vehicles are currently listed."}
+            </p>
+            {canAddEdit && (
+              <button className="btn btn-primary" onClick={() => { setEditingVehicle(null); setIsModalOpen(true); }}>
+                <Plus size={18} />
+                <span>Add Vehicle</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="table-responsive">
@@ -275,7 +289,7 @@ export default function Vehicles() {
                   <th>Category</th>
                   <th>Price (₹)</th>
                   <th>Stock Quantity</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  {canAddEdit && <th style={{ textAlign: 'right' }}>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -296,22 +310,26 @@ export default function Vehicles() {
                         {v.quantity === 0 ? 'Out of Stock (0)' : v.quantity <= 3 ? `Low Stock (${v.quantity})` : `${v.quantity} Units`}
                       </span>
                     </td>
-                    <td className="col-actions">
-                      <button
-                        className="action-btn edit-btn"
-                        title="Edit Vehicle"
-                        onClick={() => { setEditingVehicle(v); setIsModalOpen(true); }}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        className="action-btn delete-btn"
-                        title="Delete Vehicle"
-                        onClick={() => setDeletingVehicle(v)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
+                    {canAddEdit && (
+                      <td className="col-actions">
+                        <button
+                          className="action-btn edit-btn"
+                          title="Edit Vehicle"
+                          onClick={() => { setEditingVehicle(v); setIsModalOpen(true); }}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        {canDelete && (
+                          <button
+                            className="action-btn delete-btn"
+                            title="Delete Vehicle"
+                            onClick={() => setDeletingVehicle(v)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -320,21 +338,23 @@ export default function Vehicles() {
         )}
       </div>
 
-      {/* Add / Edit Modal */}
-      <VehicleModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveVehicle}
-        vehicle={editingVehicle}
-      />
+      {canAddEdit && (
+        <VehicleModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveVehicle}
+          vehicle={editingVehicle}
+        />
+      )}
 
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={!!deletingVehicle}
-        onClose={() => setDeletingVehicle(null)}
-        onConfirm={handleDeleteConfirm}
-        vehicle={deletingVehicle}
-      />
+      {canDelete && (
+        <DeleteConfirmModal
+          isOpen={!!deletingVehicle}
+          onClose={() => setDeletingVehicle(null)}
+          onConfirm={handleDeleteConfirm}
+          vehicle={deletingVehicle}
+        />
+      )}
     </div>
   );
 }

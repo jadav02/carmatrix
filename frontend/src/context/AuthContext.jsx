@@ -1,9 +1,5 @@
 // ==========================================
-// Auth Context & Provider
-// ==========================================
-// Global state management for user authentication:
-//   - Persists JWT token & user profile in localStorage.
-//   - Exposes login, register, logout, and auth state.
+// Auth Context & Provider with RBAC Approval
 // ==========================================
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -17,7 +13,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Initialize auth state from localStorage on app load
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem('car_dealership_token');
@@ -28,7 +23,6 @@ export function AuthProvider({ children }) {
         setUser(JSON.parse(storedUser));
       }
     } catch (err) {
-      console.error('Failed to restore auth session:', err);
       localStorage.removeItem('car_dealership_token');
       localStorage.removeItem('car_dealership_user');
     } finally {
@@ -36,14 +30,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  /**
-   * Log in user with email and password
-   */
   const login = async (email, password) => {
     setError(null);
     try {
       const response = await loginUser({ email, password });
-      
       const { access_token, user: userProfile } = response;
 
       setToken(access_token);
@@ -59,26 +49,17 @@ export function AuthProvider({ children }) {
     }
   };
 
-  /**
-   * Register a new user and automatically log them in
-   */
   const register = async (userData) => {
     setError(null);
     try {
-      // 1. Call backend register API
-      await registerUser(userData);
-
-      // 2. Automatically log in after successful registration
-      return await login(userData.email, userData.password);
+      const res = await registerUser(userData);
+      return res;
     } catch (err) {
       setError(err.message);
       throw err;
     }
   };
 
-  /**
-   * Log out user and clear stored credentials
-   */
   const logout = () => {
     setToken(null);
     setUser(null);

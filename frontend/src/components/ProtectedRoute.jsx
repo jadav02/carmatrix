@@ -1,17 +1,15 @@
 // ==========================================
-// Protected Route Component
-// ==========================================
-// Wraps routes that require JWT authentication.
-// Redirects unauthenticated users to /login.
+// Protected Route Component with Role Protection
 // ==========================================
 
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Car } from 'lucide-react';
+import AccessDenied from '../pages/AccessDenied';
 
-export default function ProtectedRoute() {
-  const { isAuthenticated, loading } = useAuth();
+export default function ProtectedRoute({ allowedRoles = [] }) {
+  const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -28,6 +26,14 @@ export default function ProtectedRoute() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Normalize user role
+  const userRole = (user?.role || 'sales').toLowerCase();
+  const normalizedUserRole = userRole.includes('admin') ? 'admin' : userRole.includes('manager') ? 'manager' : 'sales';
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedUserRole)) {
+    return <AccessDenied />;
   }
 
   return <Outlet />;
