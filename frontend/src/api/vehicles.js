@@ -20,6 +20,16 @@ function getAuthHeaders() {
   };
 }
 
+function handleAuthError(response) {
+  if (response.status === 401) {
+    localStorage.removeItem('car_dealership_token');
+    localStorage.removeItem('car_dealership_user');
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+  }
+}
+
 /**
  * Get all vehicles with optional filters
  */
@@ -39,6 +49,8 @@ export async function getVehicles(filters = {}) {
     headers: getAuthHeaders(),
   });
 
+  handleAuthError(response);
+
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.detail || 'Failed to fetch vehicles');
@@ -55,6 +67,8 @@ export async function getInventorySummary() {
     method: 'GET',
     headers: getAuthHeaders(),
   });
+
+  handleAuthError(response);
 
   const data = await response.json();
   if (!response.ok) {
@@ -73,6 +87,8 @@ export async function getVehicleById(id) {
     headers: getAuthHeaders(),
   });
 
+  handleAuthError(response);
+
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.detail || 'Failed to fetch vehicle details');
@@ -90,6 +106,8 @@ export async function createVehicle(vehicleData) {
     headers: getAuthHeaders(),
     body: JSON.stringify(vehicleData),
   });
+
+  handleAuthError(response);
 
   const data = await response.json();
   if (!response.ok) {
@@ -112,6 +130,8 @@ export async function updateVehicle(id, vehicleData) {
     body: JSON.stringify(vehicleData),
   });
 
+  handleAuthError(response);
+
   const data = await response.json();
   if (!response.ok) {
     if (Array.isArray(data.detail)) {
@@ -131,6 +151,8 @@ export async function deleteVehicle(id) {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
+
+  handleAuthError(response);
 
   const data = await response.json();
   if (!response.ok) {

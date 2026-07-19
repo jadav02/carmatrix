@@ -17,6 +17,16 @@ function getAuthHeaders() {
   };
 }
 
+function handleAuthError(response) {
+  if (response.status === 401) {
+    localStorage.removeItem('car_dealership_token');
+    localStorage.removeItem('car_dealership_user');
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+  }
+}
+
 /**
  * Purchase/sell vehicle stock (decreases quantity)
  * @param {number} vehicle_id 
@@ -28,6 +38,8 @@ export async function purchaseStock(vehicle_id, quantity) {
     headers: getAuthHeaders(),
     body: JSON.stringify({ vehicle_id: Number(vehicle_id), quantity: Number(quantity) }),
   });
+
+  handleAuthError(response);
 
   const data = await response.json();
   if (!response.ok) {
@@ -52,6 +64,8 @@ export async function restockStock(vehicle_id, quantity) {
     body: JSON.stringify({ vehicle_id: Number(vehicle_id), quantity: Number(quantity) }),
   });
 
+  handleAuthError(response);
+
   const data = await response.json();
   if (!response.ok) {
     if (Array.isArray(data.detail)) {
@@ -71,6 +85,8 @@ export async function getInventory() {
     method: 'GET',
     headers: getAuthHeaders(),
   });
+
+  handleAuthError(response);
 
   const data = await response.json();
   if (!response.ok) {
