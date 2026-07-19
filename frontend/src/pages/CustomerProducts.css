@@ -21,7 +21,7 @@
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 1.5rem;
 }
 
@@ -81,15 +81,24 @@
 }
 
 .product-price {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--accent-emerald);
+  word-break: break-word;
 }
 
 .product-stock {
   margin-bottom: 0.75rem;
 }
 
-.add-cart-btn {
+.product-actions-group {
+  display: flex;
+  gap: 0.6rem;
   margin-top: auto;
+}
+
+.product-actions-group .btn {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  font-size: 0.85rem;
 }

@@ -1,5 +1,5 @@
 // ==========================================
-// Customer Checkout & Billing Page
+// Customer Checkout & Billing Page with UPI QR Code
 // ==========================================
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
@@ -16,7 +16,8 @@ import {
   ShieldCheck, 
   Smartphone, 
   Banknote,
-  Lock
+  Lock,
+  QrCode
 } from 'lucide-react';
 import './Checkout.css';
 
@@ -30,7 +31,7 @@ export default function Checkout() {
     city: '',
     state: '',
     pincode: '',
-    payment_method: 'Credit/Debit Card',
+    payment_method: 'UPI Payment (9408578951@upi)',
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +39,8 @@ export default function Checkout() {
   const [orderSuccess, setOrderSuccess] = useState(null);
 
   const totalAmount = getCartTotal();
+  const upiId = '9408578951@upi';
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=${upiId}&pn=CarMatrix%20Dealership&am=${totalAmount}&cu=INR`)}`;
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -231,28 +234,16 @@ export default function Checkout() {
               </h2>
 
               <div className="payment-options">
-                <label className={`payment-option ${formData.payment_method === 'Credit/Debit Card' ? 'active' : ''}`}>
+                <label className={`payment-option ${formData.payment_method.includes('UPI') ? 'active' : ''}`}>
                   <input
                     type="radio"
                     name="payment_method"
-                    value="Credit/Debit Card"
-                    checked={formData.payment_method === 'Credit/Debit Card'}
-                    onChange={handleChange}
-                  />
-                  <CreditCard size={20} />
-                  <span>Credit / Debit Card</span>
-                </label>
-
-                <label className={`payment-option ${formData.payment_method === 'UPI / Net Banking' ? 'active' : ''}`}>
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    value="UPI / Net Banking"
-                    checked={formData.payment_method === 'UPI / Net Banking'}
+                    value="UPI Payment (9408578951@upi)"
+                    checked={formData.payment_method.includes('UPI')}
                     onChange={handleChange}
                   />
                   <Smartphone size={20} />
-                  <span>UPI / Net Banking</span>
+                  <span>UPI Payment (QR Code)</span>
                 </label>
 
                 <label className={`payment-option ${formData.payment_method === 'Cash on Delivery' ? 'active' : ''}`}>
@@ -267,6 +258,31 @@ export default function Checkout() {
                   <span>Cash on Delivery</span>
                 </label>
               </div>
+
+              {/* Display UPI QR Code Box when UPI is selected */}
+              {formData.payment_method.includes('UPI') && (
+                <div className="upi-qr-card glass-panel" style={{ marginTop: '1.25rem', padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontWeight: '700', fontSize: '1.05rem', color: 'var(--primary)' }}>
+                    <QrCode size={20} />
+                    <span>Scan & Pay via any UPI App</span>
+                  </div>
+
+                  <div className="qr-container" style={{ background: '#ffffff', padding: '1rem', borderRadius: 'var(--radius-md)', display: 'inline-block', border: '2px solid var(--primary)' }}>
+                    <img 
+                      src={qrCodeUrl} 
+                      alt="UPI QR Code 9408578951@upi" 
+                      style={{ width: '180px', height: '180px', display: 'block' }} 
+                    />
+                  </div>
+
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    UPI ID: <strong style={{ color: 'var(--accent-emerald)', fontSize: '1rem' }}>{upiId}</strong>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Open Google Pay, PhonePe, Paytm, or BHIM to scan and confirm payment of <strong>{formatINR(totalAmount)}</strong>
+                  </p>
+                </div>
+              )}
 
               <button
                 type="submit"

@@ -1,10 +1,11 @@
 // ==========================================
-// Customer Storefront Product Catalog Page
+// Customer Storefront Product Catalog Page with Buy Now
 // ==========================================
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../utils/formatters';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
@@ -14,7 +15,8 @@ import {
   RefreshCw, 
   ArrowUpDown,
   Sparkles,
-  Layers
+  Layers,
+  CreditCard
 } from 'lucide-react';
 import './CustomerProducts.css';
 
@@ -22,12 +24,13 @@ const CATEGORIES = ['All', 'Sedan', 'SUV', 'Truck', 'Coupe', 'Electric', 'Hybrid
 
 export default function CustomerProducts() {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
-  const [sortBy, setSortBy] = useState('default'); // 'default' | 'price_asc' | 'price_desc'
+  const [sortBy, setSortBy] = useState('default');
   const [toastMessage, setToastMessage] = useState('');
 
   const fetchProducts = async () => {
@@ -52,7 +55,11 @@ export default function CustomerProducts() {
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-  // Filter & Sort logic
+  const handleBuyNow = (v) => {
+    addToCart(v, 1);
+    navigate('/checkout');
+  };
+
   const filteredVehicles = vehicles
     .filter(v => {
       const matchSearch = `${v.make} ${v.model}`.toLowerCase().includes(search.toLowerCase());
@@ -67,15 +74,14 @@ export default function CustomerProducts() {
 
   return (
     <div className="customer-storefront">
-      {/* Banner */}
       <div className="store-banner glass-panel">
         <div className="banner-content">
           <div className="welcome-tag">
             <Sparkles size={16} />
-            <span>CarMatrix Showroom</span>
+            <span>CarMatrix Luxury Showroom</span>
           </div>
-          <h1>Explore Premium <span className="gradient-text">Dealership Vehicles</span></h1>
-          <p>Find your ideal car, add it to your shopping cart, and complete your purchase online.</p>
+          <h1>Explore Premium <span className="gradient-text">Supercars & Vehicles</span></h1>
+          <p>Find your dream car, add it to your shopping cart, or click Buy Now to proceed directly to billing & checkout.</p>
         </div>
       </div>
 
@@ -86,7 +92,6 @@ export default function CustomerProducts() {
         </div>
       )}
 
-      {/* Controls Bar */}
       <div className="controls-bar glass-panel">
         <div className="search-box">
           <input
@@ -132,11 +137,10 @@ export default function CustomerProducts() {
         </div>
       </div>
 
-      {/* Product Grid */}
       {loading ? (
         <div className="table-loading" style={{ padding: '3rem 0' }}>
           <div className="spinner" style={{ width: '40px', height: '40px' }} />
-          <p>Loading available vehicles...</p>
+          <p>Loading luxury vehicle collection...</p>
         </div>
       ) : filteredVehicles.length === 0 ? (
         <div className="table-empty glass-panel" style={{ padding: '3rem' }}>
@@ -167,14 +171,28 @@ export default function CustomerProducts() {
                   </span>
                 </div>
 
-                <button
-                  className="btn btn-primary btn-full add-cart-btn"
-                  onClick={() => handleAddToCart(v)}
-                  disabled={v.quantity === 0}
-                >
-                  <ShoppingBag size={18} />
-                  <span>Add to Cart</span>
-                </button>
+                {/* Actions: Add to Cart & Buy Now / Checkout */}
+                <div className="product-actions-group">
+                  <button
+                    className="btn btn-secondary add-cart-btn"
+                    onClick={() => handleAddToCart(v)}
+                    disabled={v.quantity === 0}
+                    title="Add vehicle to cart"
+                  >
+                    <ShoppingBag size={16} />
+                    <span>Add to Cart</span>
+                  </button>
+
+                  <button
+                    className="btn btn-primary buy-now-btn"
+                    onClick={() => handleBuyNow(v)}
+                    disabled={v.quantity === 0}
+                    title="Buy vehicle and proceed to checkout"
+                  >
+                    <CreditCard size={16} />
+                    <span>Buy Now</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
