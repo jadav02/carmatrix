@@ -11,7 +11,7 @@ import urllib.request
 import urllib.error
 
 
-def run_login_tests(base_url: str = "http://127.0.0.1:8003/api/auth"):
+def run_login_tests(base_url: str = "http://127.0.0.1:8005/api/auth"):
     print("==========================================")
     print("Running Login Endpoint Verification Tests")
     print("==========================================")
