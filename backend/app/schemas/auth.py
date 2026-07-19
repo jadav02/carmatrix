@@ -13,8 +13,8 @@ class LoginRequest(BaseModel):
     """
     Schema for user login request.
     """
-    email: EmailStr = Field(..., description="Registered email address")
-    password: str = Field(..., min_length=8, description="Account password")
+    email: EmailStr = Field(..., description="Valid email address")
+    password: str = Field(..., min_length=8, description="Password (minimum 8 characters)")
 
 
 class LoginResponse(BaseModel):
