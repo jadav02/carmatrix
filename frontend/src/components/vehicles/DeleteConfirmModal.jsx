@@ -1,21 +1,27 @@
 // ==========================================
 // Delete Vehicle Confirmation Modal
 // ==========================================
-import React, { useState } from 'react';
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Trash2, X, AlertCircle } from 'lucide-react';
 
 export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, vehicle }) {
   const [deleting, setDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    setErrorMessage('');
+  }, [isOpen, vehicle]);
 
   if (!isOpen || !vehicle) return null;
 
   const handleDelete = async () => {
     setDeleting(true);
+    setErrorMessage('');
     try {
       await onConfirm(vehicle.id);
       onClose();
     } catch (err) {
-      console.error('Delete error:', err);
+      setErrorMessage(err.message || 'Failed to delete vehicle. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -33,6 +39,13 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, vehicle
             <X size={20} />
           </button>
         </div>
+
+        {errorMessage && (
+          <div className="alert alert-danger" style={{ margin: '1rem 1.5rem 0' }}>
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         <div style={{ padding: '1.5rem', lineHeight: '1.6' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>

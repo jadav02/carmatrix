@@ -40,9 +40,17 @@ export default function Inventory() {
     try {
       const data = await getVehicles();
       setVehicles(data);
-      if (data.length > 0 && !purchaseForm.vehicle_id) {
-        setPurchaseForm(prev => ({ ...prev, vehicle_id: String(data[0].id) }));
-        setRestockForm(prev => ({ ...prev, vehicle_id: String(data[0].id) }));
+
+      if (data.length > 0) {
+        const firstId = String(data[0].id);
+        const purchaseValid = data.some(v => String(v.id) === purchaseForm.vehicle_id);
+        if (!purchaseValid) {
+          setPurchaseForm(prev => ({ ...prev, vehicle_id: firstId }));
+        }
+        const restockValid = data.some(v => String(v.id) === restockForm.vehicle_id);
+        if (!restockValid) {
+          setRestockForm(prev => ({ ...prev, vehicle_id: firstId }));
+        }
       }
     } catch (err) {
       setErrorMessage(err.message || 'Failed to fetch inventory stock');
