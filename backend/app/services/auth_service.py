@@ -45,9 +45,9 @@ def register_user(db: Session, user_in: UserCreate) -> dict:
     return {"message": "User Created Successfully"}
 
 
-def login_user(db: Session, credentials: LoginRequest) -> dict:
+def login(db: Session, credentials: LoginRequest) -> dict:
     """
-    Authenticates a user and returns a JWT access token.
+    Authenticates a user and returns a JWT access token along with user details.
 
     Validations:
     - Checks if the email exists in the database.
@@ -63,8 +63,6 @@ def login_user(db: Session, credentials: LoginRequest) -> dict:
     user = db.query(User).filter(User.email == credentials.email).first()
 
     # If user doesn't exist OR password doesn't match, return 401
-    # (we use the same error message for both to avoid leaking
-    #  whether a given email is registered)
     if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -92,5 +90,10 @@ def login_user(db: Session, credentials: LoginRequest) -> dict:
             "role": user.role,
         },
     }
+
+
+# Alias for backward compatibility
+login_user = login
+
 
 
