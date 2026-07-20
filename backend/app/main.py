@@ -14,6 +14,7 @@ from app.database import Base, engine, SessionLocal
 from app.models.user import User
 from app.models.vehicle import Vehicle
 from app.core.security import hash_password
+from app.seed_vehicles import seed_vehicles
 from app.routers import (
     auth_router,
     vehicle_router,
@@ -110,6 +111,7 @@ def run_startup_migrations():
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
     run_startup_migrations()
+    seed_vehicles()
     yield
 
 
