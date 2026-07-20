@@ -38,7 +38,7 @@ export default function Vehicles() {
   const role = userRole.includes('admin') ? 'admin' : userRole.includes('manager') ? 'manager' : 'sales';
 
   const canAddEdit = role === 'admin' || role === 'manager';
-  const canDelete = role === 'admin';
+  const canDelete = role === 'admin' || role === 'manager';
 
   const [vehicles, setVehicles] = useState([]);
   const [summary, setSummary] = useState(null);
