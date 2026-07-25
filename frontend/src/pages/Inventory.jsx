@@ -2,9 +2,11 @@
 // Inventory Management Page with Purchase & Sale Price Profit Metrics
 // ==========================================
 import React, { useState, useEffect } from 'react';
-import { getVehicles } from '../api/vehicles';
+import { useAuth } from '../context/AuthContext';
+import { getVehicles, updateVehicle } from '../api/vehicles';
 import { purchaseStock, restockStock } from '../api/inventory';
 import { formatINR, formatRestockDate } from '../utils/formatters';
+import VehicleModal from '../components/vehicles/VehicleModal';
 import { 
   Boxes, 
   ShoppingCart, 
@@ -17,13 +19,22 @@ import {
   ArrowDownRight,
   TrendingUp,
   Search,
-  Filter
+  Filter,
+  Edit
 } from 'lucide-react';
 import './Inventory.css';
 
 export default function Inventory() {
+  const { user } = useAuth();
+  const userRole = (user?.role || 'sales').toLowerCase();
+  const canEditVehicle = userRole.includes('admin') || userRole.includes('manager');
+
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Vehicle edit modal state
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState(null);
 
   // Search and stock filtration state
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,6 +102,14 @@ export default function Inventory() {
   const showSuccess = (msg) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(''), 4000);
+  };
+
+  const handleSaveVehicle = async (vehicleData) => {
+    if (editingVehicle) {
+      const updated = await updateVehicle(editingVehicle.id, vehicleData);
+      showSuccess(`Updated ${updated.make} ${updated.model} details successfully!`);
+      fetchInventory();
+    }
   };
 
   // Handle Purchase submission
@@ -466,6 +485,16 @@ export default function Inventory() {
                         </span>
                       </td>
                       <td className="col-actions">
+                        {canEditVehicle && (
+                          <button
+                            className="action-btn edit-btn"
+                            onClick={() => { setEditingVehicle(v); setIsVehicleModalOpen(true); }}
+                            title="Edit Vehicle Details & Pricing"
+                            style={{ marginRight: '0.4rem' }}
+                          >
+                            <Edit size={16} />
+                          </button>
+                        )}
                         <button
                           className="btn btn-secondary quick-btn"
                           onClick={() => handleQuickSelect(v, 'purchase')}
@@ -492,6 +521,15 @@ export default function Inventory() {
           </div>
         )}
       </div>
+
+      {canEditVehicle && (
+        <VehicleModal
+          isOpen={isVehicleModalOpen}
+          onClose={() => setIsVehicleModalOpen(false)}
+          onSave={handleSaveVehicle}
+          vehicle={editingVehicle}
+        />
+      )}
     </div>
   );
 }
