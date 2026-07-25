@@ -15,13 +15,35 @@ import {
   Car, 
   ArrowUpRight, 
   ArrowDownRight,
-  TrendingUp
+  TrendingUp,
+  Search,
+  Filter
 } from 'lucide-react';
 import './Inventory.css';
 
 export default function Inventory() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Search and stock filtration state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stockFilter, setStockFilter] = useState('all'); // 'all' | 'low' | 'out' | 'in'
+
+  const filteredVehicles = vehicles.filter(v => {
+    const fullName = `${v.make} ${v.model}`.toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase().trim());
+
+    let matchesStock = true;
+    if (stockFilter === 'low') {
+      matchesStock = v.quantity <= 3;
+    } else if (stockFilter === 'out') {
+      matchesStock = v.quantity === 0;
+    } else if (stockFilter === 'in') {
+      matchesStock = v.quantity > 0;
+    }
+
+    return matchesSearch && matchesStock;
+  });
 
   // Forms state
   const [purchaseForm, setPurchaseForm] = useState({ vehicle_id: '', quantity: '1' });
@@ -329,6 +351,47 @@ export default function Inventory() {
         </div>
       </div>
 
+      {/* Controls Bar: Name Search & Stock Status Filter */}
+      <div className="controls-bar glass-panel" style={{ marginBottom: '1.25rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="search-box" style={{ flex: 1, minWidth: '260px' }}>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Search inventory by vehicle make or model..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Search className="input-icon" size={18} />
+        </div>
+
+        <div className="filter-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Filter size={16} className="text-muted" />
+            <select
+              className="form-input select-input filter-select"
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              style={{ minWidth: '200px' }}
+            >
+              <option value="all">All Stock Statuses</option>
+              <option value="low">Low Stock Alert (≤ 3 units)</option>
+              <option value="out">Out of Stock (0 units)</option>
+              <option value="in">In Stock (&gt; 0 units)</option>
+            </select>
+          </div>
+
+          {(searchTerm || stockFilter !== 'all') && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => { setSearchTerm(''); setStockFilter('all'); }}
+              style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Stock Overview Table */}
       <div className="table-card glass-panel">
         <div className="table-card-header">
@@ -341,11 +404,24 @@ export default function Inventory() {
             <div className="spinner" style={{ width: '36px', height: '36px' }} />
             <p>Loading stock inventory levels...</p>
           </div>
-        ) : vehicles.length === 0 ? (
+        ) : filteredVehicles.length === 0 ? (
           <div className="table-empty">
             <Boxes size={48} className="empty-icon" />
-            <h3>No Inventory Items Available</h3>
-            <p>Add vehicles to the system to manage stock purchases and restocking.</p>
+            <h3>No Inventory Vehicles Match Your Search or Filter</h3>
+            <p>
+              {(searchTerm || stockFilter !== 'all')
+                ? "Try adjusting your vehicle name search or stock filter option."
+                : "Add vehicles to the system to manage stock purchases and restocking."}
+            </p>
+            {(searchTerm || stockFilter !== 'all') && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => { setSearchTerm(''); setStockFilter('all'); }}
+                style={{ marginTop: '0.75rem' }}
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="table-responsive">
@@ -363,7 +439,7 @@ export default function Inventory() {
                 </tr>
               </thead>
               <tbody>
-                {vehicles.map(v => {
+                {filteredVehicles.map(v => {
                   const sPrice = v.selling_price || v.price;
                   const pPrice = v.purchase_price || (sPrice * 0.75);
                   const unitProfit = v.profit_per_unit !== undefined ? v.profit_per_unit : (sPrice - pPrice);
