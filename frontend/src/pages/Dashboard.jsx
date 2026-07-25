@@ -161,19 +161,6 @@ export default function Dashboard() {
             <div className="metric-value">{summary?.total_quantity || 0}</div>
             <div className="metric-sub">Purchase & Restock Stock</div>
           </div>
-
-          <div className="metric-card glass-panel" onClick={() => navigate('/inventory?filter=low_stock')} style={{ cursor: 'pointer' }}>
-            <div className="metric-header">
-              <span className="metric-title">Low Stock Alerts</span>
-              <div className="metric-icon-bg violet">
-                <AlertTriangle size={20} />
-              </div>
-            </div>
-            <div className="metric-value" style={{ color: (summary?.low_stock_count || 0) > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
-              {summary?.low_stock_count || 0}
-            </div>
-            <div className="metric-sub">Restock Urgent Items</div>
-          </div>
         </div>
       )}
 

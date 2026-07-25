@@ -2,7 +2,6 @@
 // Inventory Management Page with Purchase & Sale Price Profit Metrics
 // ==========================================
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { getVehicles } from '../api/vehicles';
 import { purchaseStock, restockStock } from '../api/inventory';
 import { formatINR, formatRestockDate } from '../utils/formatters';
@@ -12,7 +11,6 @@ import {
   PlusCircle, 
   CheckCircle, 
   AlertCircle, 
-  AlertTriangle,
   RefreshCw, 
   Car, 
   ArrowUpRight, 
@@ -22,16 +20,8 @@ import {
 import './Inventory.css';
 
 export default function Inventory() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const filterParam = searchParams.get('filter');
-
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showLowStockOnly, setShowLowStockOnly] = useState(filterParam === 'low_stock');
-
-  useEffect(() => {
-    setShowLowStockOnly(filterParam === 'low_stock');
-  }, [filterParam]);
 
   // Forms state
   const [purchaseForm, setPurchaseForm] = useState({ vehicle_id: '', quantity: '1' });
@@ -341,31 +331,9 @@ export default function Inventory() {
 
       {/* Stock Overview Table */}
       <div className="table-card glass-panel">
-        <div className="table-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Boxes size={20} className="text-indigo-400" />
-            <h2>Current Vehicle Stock Inventory & Unit Profit Breakdown</h2>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <label className="checkbox-label" style={{ margin: 0, padding: '0.4rem 0.88rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={showLowStockOnly}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setShowLowStockOnly(checked);
-                  if (checked) {
-                    setSearchParams({ filter: 'low_stock' });
-                  } else {
-                    setSearchParams({});
-                  }
-                }}
-              />
-              <AlertTriangle size={16} style={{ color: showLowStockOnly ? 'var(--danger)' : 'var(--text-muted)' }} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Low Stock Alert Only (≤ 3 units)</span>
-            </label>
-          </div>
+        <div className="table-card-header">
+          <Boxes size={20} className="text-indigo-400" />
+          <h2>Current Vehicle Stock Inventory & Unit Profit Breakdown</h2>
         </div>
 
         {loading ? (
@@ -373,24 +341,11 @@ export default function Inventory() {
             <div className="spinner" style={{ width: '36px', height: '36px' }} />
             <p>Loading stock inventory levels...</p>
           </div>
-        ) : (vehicles.filter(v => showLowStockOnly ? v.quantity <= 3 : true)).length === 0 ? (
+        ) : vehicles.length === 0 ? (
           <div className="table-empty">
             <Boxes size={48} className="empty-icon" />
-            <h3>{showLowStockOnly ? "No Low Stock Vehicles Found" : "No Inventory Items Available"}</h3>
-            <p>
-              {showLowStockOnly 
-                ? "All vehicle stock levels are currently above 3 units!" 
-                : "Add vehicles to the system to manage stock purchases and restocking."}
-            </p>
-            {showLowStockOnly && (
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => { setShowLowStockOnly(false); setSearchParams({}); }}
-                style={{ marginTop: '0.75rem' }}
-              >
-                View All Inventory
-              </button>
-            )}
+            <h3>No Inventory Items Available</h3>
+            <p>Add vehicles to the system to manage stock purchases and restocking.</p>
           </div>
         ) : (
           <div className="table-responsive">
@@ -408,7 +363,7 @@ export default function Inventory() {
                 </tr>
               </thead>
               <tbody>
-                {(vehicles.filter(v => showLowStockOnly ? v.quantity <= 3 : true)).map(v => {
+                {vehicles.map(v => {
                   const sPrice = v.selling_price || v.price;
                   const pPrice = v.purchase_price || (sPrice * 0.75);
                   const unitProfit = v.profit_per_unit !== undefined ? v.profit_per_unit : (sPrice - pPrice);
@@ -428,10 +383,10 @@ export default function Inventory() {
                         {formatINR(unitProfit)}
                       </td>
                       <td>
-                        <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
+                        <span className={`stock-badge ${v.quantity === 0 ? 'out' : 'good'}`}>
                           {v.quantity === 0 
                             ? (v.restock_date ? `Out of Stock (Restock: ${formatRestockDate(v.restock_date)})` : '0 Units (Out of Stock)')
-                            : `${v.quantity} Units ${v.quantity <= 3 ? '(Low Stock)' : ''}`}
+                            : `${v.quantity} Units`}
                         </span>
                       </td>
                       <td className="col-actions">

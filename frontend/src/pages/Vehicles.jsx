@@ -227,18 +227,6 @@ export default function Vehicles() {
               </div>
             </>
           )}
-
-          <div className="summary-card glass-panel">
-            <div className="summary-info">
-              <span className="summary-label">Low Stock Alert</span>
-              <span className="summary-num" style={{ color: summary.low_stock_count > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
-                {summary.low_stock_count}
-              </span>
-            </div>
-            <div className="summary-icon violet">
-              <AlertTriangle size={24} />
-            </div>
-          </div>
         </div>
       )}
 
@@ -352,10 +340,10 @@ export default function Vehicles() {
                         </td>
                       )}
                       <td>
-                        <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
+                        <span className={`stock-badge ${v.quantity === 0 ? 'out' : 'good'}`}>
                           {v.quantity === 0 
                             ? (v.restock_date ? `Out of Stock (Restock: ${formatRestockDate(v.restock_date)})` : 'Out of Stock (0)')
-                            : v.quantity <= 3 ? `Low Stock (${v.quantity})` : `${v.quantity} Units`}
+                            : `${v.quantity} Units`}
                         </span>
                       </td>
                       {canAddEdit && (

@@ -116,18 +116,6 @@ export default function Reports() {
                 <Boxes size={24} />
               </div>
             </div>
-
-            <div className="summary-card glass-panel">
-              <div className="summary-info">
-                <span className="summary-label">Low Stock Warnings</span>
-                <span className="summary-num" style={{ color: reports.low_stock_vehicles > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
-                  {reports.low_stock_vehicles}
-                </span>
-              </div>
-              <div className="summary-icon violet">
-                <AlertTriangle size={24} />
-              </div>
-            </div>
           </div>
 
           {/* Recent Sales Table */}

@@ -167,14 +167,6 @@ export default function Sidebar({ isOpen }) {
                   <Boxes size={20} />
                   <span>Inventory</span>
                 </NavLink>
-
-                <NavLink 
-                  to="/inventory?filter=low_stock" 
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <AlertTriangle size={20} />
-                  <span>Low Stock</span>
-                </NavLink>
               </>
             )}
 
