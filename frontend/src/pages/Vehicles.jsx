@@ -97,7 +97,7 @@ export default function Vehicles() {
 
   useEffect(() => {
     fetchData();
-  }, [filters.category, filters.in_stock_only]);
+  }, [filters.search, filters.category, filters.in_stock_only]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -231,7 +231,7 @@ export default function Vehicles() {
       )}
 
       <div className="controls-bar glass-panel">
-        <form onSubmit={handleSearchSubmit} className="search-box">
+        <div className="search-box">
           <input
             type="text"
             className="form-input"
@@ -240,10 +240,7 @@ export default function Vehicles() {
             onChange={(e) => handleFilterChange('search', e.target.value)}
           />
           <Search className="input-icon" size={18} />
-          <button type="submit" className="btn btn-secondary search-btn">
-            Search
-          </button>
-        </form>
+        </div>
 
         <div className="filter-controls">
           <div className="filter-group">
