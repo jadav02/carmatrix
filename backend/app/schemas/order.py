@@ -10,6 +10,8 @@ class OrderCheckoutRequest(BaseModel):
     payment_method: str = Field(..., min_length=2, max_length=50)
     payment_type: str | None = Field("Token Payment", max_length=50)
     payment_proof: str | None = Field(None)
+    customer_email: str | None = Field(None, max_length=255)
+    customer_mobile: str | None = Field(None, max_length=30)
     items: list[OrderItemCreate] = Field(..., min_length=1)
 
 class OrderItemResponse(BaseModel):
@@ -32,6 +34,7 @@ class OrderResponse(BaseModel):
     user_id: int
     customer_name: str
     customer_email: str
+    customer_mobile: str | None = None
     shipping_address: str
     payment_method: str
     payment_type: str | None = "Token Payment"

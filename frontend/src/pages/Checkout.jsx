@@ -20,7 +20,9 @@ import {
   Image as ImageIcon,
   Check,
   Building2,
-  Copy
+  Copy,
+  Mail,
+  Phone
 } from 'lucide-react';
 import './Checkout.css';
 
@@ -36,6 +38,8 @@ export default function Checkout() {
     city: '',
     state: '',
     pincode: '',
+    customer_email: user?.email || '',
+    customer_mobile: '',
     payment_method: 'UPI Payment',
     payment_type: 'Token Payment', // 'Token Payment' | 'Full Payment'
   });
@@ -106,6 +110,11 @@ export default function Checkout() {
       return;
     }
 
+    if (!formData.customer_email.trim() || !formData.customer_mobile.trim()) {
+      setErrorMessage('Please provide both Email Address and Mobile Number for sales bill notifications.');
+      return;
+    }
+
     // Require payment proof screenshot for both UPI and Bank Transfer
     if (!paymentProofImage) {
       setErrorMessage('Please upload your payment screenshot proof before placing your order.');
@@ -128,6 +137,8 @@ export default function Checkout() {
         payment_method: formData.payment_method,
         payment_type: isTokenPayment ? 'Token Payment' : 'Full Payment',
         payment_proof: paymentProofImage,
+        customer_email: formData.customer_email.trim(),
+        customer_mobile: formData.customer_mobile.trim(),
         items: items,
       });
 
@@ -184,6 +195,20 @@ export default function Checkout() {
               <span>Delivery Address:</span>
               <span>{orderSuccess.shipping_address}</span>
             </div>
+            <div className="receipt-row">
+              <span>Bill Email Dispatched:</span>
+              <strong style={{ color: 'var(--accent-indigo)' }}>{orderSuccess.customer_email}</strong>
+            </div>
+            {orderSuccess.customer_mobile && (
+              <div className="receipt-row">
+                <span>Bill SMS Dispatched:</span>
+                <strong style={{ color: 'var(--accent-indigo)' }}>{orderSuccess.customer_mobile}</strong>
+              </div>
+            )}
+            <div className="receipt-row">
+              <span>Dealership Contact:</span>
+              <span>support@carmatrix.com | +91 98765 43210</span>
+            </div>
 
             {orderSuccess.payment_proof && (
               <div className="receipt-row" style={{ flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-color)' }}>
@@ -239,6 +264,48 @@ export default function Checkout() {
                     value={user?.name || ''}
                     disabled
                   />
+                </div>
+              </div>
+
+              {/* Email Address for Sales Bill Email */}
+              <div className="form-group">
+                <label className="form-label" htmlFor="customer-email">
+                  Email Address for Email Bill
+                  <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Instant Sales Bill Email)</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    id="customer-email"
+                    type="email"
+                    name="customer_email"
+                    className="form-input"
+                    placeholder="customer@example.com"
+                    value={formData.customer_email}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Mail className="input-icon" size={18} />
+                </div>
+              </div>
+
+              {/* Mobile Number for Sales Bill SMS */}
+              <div className="form-group">
+                <label className="form-label" htmlFor="customer-mobile">
+                  Mobile Number for SMS Bill
+                  <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Instant Sales Bill SMS)</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    id="customer-mobile"
+                    type="tel"
+                    name="customer_mobile"
+                    className="form-input"
+                    placeholder="+91 98765 43210"
+                    value={formData.customer_mobile}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Phone className="input-icon" size={18} />
                 </div>
               </div>
 

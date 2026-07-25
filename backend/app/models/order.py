@@ -21,6 +21,7 @@ class Order(Base):
     
     customer_name: Mapped[str] = mapped_column(String(150), nullable=False)
     customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    customer_mobile: Mapped[str | None] = mapped_column(String(30), nullable=True)
     shipping_address: Mapped[str] = mapped_column(String(255), nullable=False)
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
     payment_type: Mapped[str | None] = mapped_column(String(50), default="Token Payment", nullable=True)

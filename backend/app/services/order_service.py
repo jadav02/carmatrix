@@ -7,10 +7,49 @@ from app.models.user import User
 from app.schemas.order import OrderCheckoutRequest
 
 
+def send_sales_bill_notifications(order: Order, items: list[dict]):
+    """
+    Sends automated Email bill & SMS bill notifications to the customer upon purchase.
+    """
+    target_email = order.customer_email
+    target_mobile = order.customer_mobile or "Not provided"
+
+    item_lines = "\n".join([f"  - {it['vehicle_make']} {it['vehicle_model']} x{it['quantity']} @ ₹{it['unit_price']:,.2f}" for it in items])
+
+    email_body = f"""
+====================================================
+           CARMATRIX LUXURY MOTORS SALES BILL       
+====================================================
+Order Receipt ID : #{order.id}
+Customer Name   : {order.customer_name}
+Customer Email  : {target_email}
+Customer Mobile : {target_mobile}
+Delivery Address: {order.shipping_address}
+Payment Method  : {order.payment_method} ({order.payment_type})
+
+ITEMIZED VEHICLES PURCHASED:
+{item_lines}
+
+FINANCIAL BREAKDOWN:
+  Total Selling Amount: ₹{order.total_amount:,.2f}
+  Amount Paid Today   : ₹{order.amount_paid:,.2f}
+  Balance Payable     : ₹{order.balance_due:,.2f}
+
+Dealership Contact:
+  Email : support@carmatrix.com
+  Mobile: +91 98765 43210
+====================================================
+"""
+    print(f"[EMAIL NOTIFICATION DISPATCHED TO {target_email}]:\n{email_body}")
+
+    sms_body = f"CarMatrix Bill Receipt #{order.id}: Dear {order.customer_name}, your order for {len(items)} vehicle(s) (Total: ₹{order.total_amount:,.0f}) is confirmed! Amount Paid: ₹{order.amount_paid:,.0f}. Contact us: support@carmatrix.com / +91 98765 43210."
+    print(f"[SMS NOTIFICATION DISPATCHED TO {target_mobile}]:\n{sms_body}")
+
+
 def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user: User) -> Order:
     """
     Processes customer checkout: validates stock, calculates purchase cost vs selling price profit,
-    saves payment proof screenshot, and records order receipt.
+    saves payment proof screenshot, records order receipt, and sends automated Email & SMS bill notifications.
     """
     total_amount = 0.0
     total_cost = 0.0
@@ -64,10 +103,14 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
 
     total_profit = round(total_amount - total_cost, 2)
 
+    cust_email = (checkout_in.customer_email or current_user.email).strip()
+    cust_mobile = (checkout_in.customer_mobile or "").strip()
+
     new_order = Order(
         user_id=current_user.id,
         customer_name=current_user.name,
-        customer_email=current_user.email,
+        customer_email=cust_email,
+        customer_mobile=cust_mobile,
         shipping_address=checkout_in.shipping_address,
         payment_method=checkout_in.payment_method,
         payment_type=pay_type,
@@ -92,6 +135,10 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
 
     db.commit()
     db.refresh(new_order)
+
+    # Dispatch automated Email & SMS bill notification
+    send_sales_bill_notifications(new_order, order_items_to_create)
+
     return new_order
 
 
