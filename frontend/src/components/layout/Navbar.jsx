@@ -16,6 +16,16 @@ export default function Navbar({ onToggleSidebar }) {
   const navigate = useNavigate();
 
   const cartCount = getCartCount();
+  const userRole = (user?.role || 'customer').toLowerCase();
+  const isCustomer = userRole === 'customer' || userRole === 'user';
+
+  const getNavbarRoleDisplay = (r) => {
+    const roleLower = (r || '').toLowerCase();
+    if (roleLower === 'admin') return 'Administrator';
+    if (roleLower === 'manager') return 'Inventory Manager';
+    if (roleLower === 'sales') return 'Sales Representative';
+    return 'User';
+  };
 
   return (
     <header className="navbar">
@@ -33,18 +43,20 @@ export default function Navbar({ onToggleSidebar }) {
       </div>
 
       <div className="navbar-right">
-        {/* Shopping Cart Button with Count Badge */}
-        <button
-          className="theme-toggle-btn cart-nav-btn"
-          onClick={() => navigate('/cart')}
-          title="View Shopping Cart"
-          style={{ position: 'relative' }}
-        >
-          <ShoppingBag size={20} />
-          {cartCount > 0 && (
-            <span className="cart-badge">{cartCount}</span>
-          )}
-        </button>
+        {/* Shopping Cart Button with Count Badge (Visible ONLY for User / Customer role) */}
+        {isCustomer && (
+          <button
+            className="theme-toggle-btn cart-nav-btn"
+            onClick={() => navigate('/cart')}
+            title="View Shopping Cart"
+            style={{ position: 'relative' }}
+          >
+            <ShoppingBag size={20} />
+            {cartCount > 0 && (
+              <span className="cart-badge">{cartCount}</span>
+            )}
+          </button>
+        )}
 
         {/* Sun / Moon Theme Toggle */}
         <button 
@@ -64,7 +76,7 @@ export default function Navbar({ onToggleSidebar }) {
               <span className="user-name">{user.name}</span>
               <span className="user-role">
                 <Shield size={12} />
-                {user.role === 'customer' ? 'Customer' : (user.role || 'Sales Representative')}
+                {getNavbarRoleDisplay(user.role)}
               </span>
             </div>
           </div>
