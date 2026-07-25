@@ -33,8 +33,8 @@ def checkout_order(db: Session, checkout_in: OrderCheckoutRequest, current_user:
         # Reduce stock
         vehicle.quantity -= item.quantity
 
-        unit_cost = float(vehicle.purchase_price) if vehicle.purchase_price and vehicle.purchase_price > 0 else round(float(vehicle.price) * 0.75, 2)
-        unit_price = float(vehicle.selling_price) if vehicle.selling_price and vehicle.selling_price > 0 else float(vehicle.price)
+        unit_cost = vehicle.purchase_price if vehicle.purchase_price and vehicle.purchase_price > 0 else round(vehicle.price * 0.75, 2)
+        unit_price = vehicle.selling_price if vehicle.selling_price and vehicle.selling_price > 0 else vehicle.price
 
         subtotal = round(unit_price * item.quantity, 2)
         subtotal_cost = round(unit_cost * item.quantity, 2)

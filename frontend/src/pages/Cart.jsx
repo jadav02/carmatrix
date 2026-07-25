@@ -80,21 +80,29 @@ export default function Cart() {
                       </td>
                       <td>{formatINR(item.price)}</td>
                       <td>
-                        <div className="qty-controls">
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <span className="qty-val">{item.quantity}</span>
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            disabled={item.quantity >= item.maxQuantity}
-                          >
-                            <Plus size={14} />
-                          </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <div className="qty-controls">
+                            <button
+                              className="qty-btn"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="qty-val">{item.quantity}</span>
+                            <button
+                              className="qty-btn"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              disabled={item.quantity >= item.maxQuantity}
+                              title={item.quantity >= item.maxQuantity ? "Maximum available stock limit reached" : "Increase quantity"}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          {item.quantity >= item.maxQuantity && (
+                            <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 600 }}>
+                              Max stock limit ({item.maxQuantity})
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="col-price">{formatINR(item.price * item.quantity)}</td>

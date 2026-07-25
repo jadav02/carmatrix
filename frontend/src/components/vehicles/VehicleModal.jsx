@@ -213,7 +213,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
               <div className="form-group">
                 <label className="form-label" htmlFor="restock-date">
                   Expected Restock Date
-                  <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Blinkit restock timeline)</span>
+                  <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Estimated restock schedule)</span>
                 </label>
                 <div className="input-wrapper">
                   <input

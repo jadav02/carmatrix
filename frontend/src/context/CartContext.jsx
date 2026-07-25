@@ -20,6 +20,7 @@ export function CartProvider({ children }) {
   }, [cart]);
 
   const addToCart = (vehicle, qty = 1) => {
+    if (!vehicle || vehicle.quantity <= 0) return;
     setCart(prev => {
       const existingIndex = prev.findIndex(item => item.id === vehicle.id);
       if (existingIndex > -1) {

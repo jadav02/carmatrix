@@ -220,12 +220,20 @@ export default function Inventory() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="purchase-quantity">Units to Purchase/Sell</label>
+                <label className="form-label" htmlFor="purchase-quantity">
+                  Units to Purchase/Sell
+                  {vehicles.find(v => String(v.id) === String(purchaseForm.vehicle_id)) && (
+                    <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>
+                      (Max available stock: {vehicles.find(v => String(v.id) === String(purchaseForm.vehicle_id)).quantity} units)
+                    </span>
+                  )}
+                </label>
                 <div className="input-wrapper">
                   <input
                     id="purchase-quantity"
                     type="number"
                     min="1"
+                    max={vehicles.find(v => String(v.id) === String(purchaseForm.vehicle_id))?.quantity || 1}
                     className="form-input"
                     placeholder="Quantity"
                     value={purchaseForm.quantity}

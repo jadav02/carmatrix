@@ -52,6 +52,8 @@ def update_user_role(db: Session, user_id: int, role_in: UserRoleUpdate) -> User
         role = "admin"
     elif "manager" in raw_role:
         role = "manager"
+    elif "user" in raw_role or "customer" in raw_role:
+        role = "user"
     else:
         role = "sales"
 

@@ -76,9 +76,11 @@ export default function UserManagement() {
   };
 
   const getRoleDisplay = (r) => {
-    if (r === 'admin') return 'Administrator';
-    if (r === 'manager') return 'Inventory Manager';
-    return 'Sales Representative';
+    const roleLower = (r || '').toLowerCase();
+    if (roleLower === 'admin') return 'Administrator';
+    if (roleLower === 'manager') return 'Inventory Manager';
+    if (roleLower === 'sales') return 'Sales Representative';
+    return 'User';
   };
 
   return (
@@ -145,12 +147,13 @@ export default function UserManagement() {
                     <td>
                       <select
                         className="form-input select-input role-select"
-                        value={u.role}
+                        value={(u.role === 'customer' || u.role === 'user') ? 'user' : u.role}
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                       >
-                        <option value="admin">Administrator</option>
-                        <option value="manager">Inventory Manager</option>
+                        <option value="user">User</option>
                         <option value="sales">Sales Representative</option>
+                        <option value="manager">Inventory Manager</option>
+                        <option value="admin">Administrator</option>
                       </select>
                     </td>
                     <td>
