@@ -25,6 +25,8 @@ class Sale(Base):
     vehicle_make: Mapped[str] = mapped_column(String(100), nullable=False)
     vehicle_model: Mapped[str] = mapped_column(String(100), nullable=False)
     customer_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    customer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    customer_mobile: Mapped[str | None] = mapped_column(String(30), nullable=True)
     
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[float] = mapped_column(Float, nullable=False)

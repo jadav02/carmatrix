@@ -7,6 +7,8 @@ class SaleCreate(BaseModel):
     """
     vehicle_id: int = Field(..., gt=0, description="ID of the vehicle being sold")
     customer_name: str = Field(..., min_length=1, max_length=150, description="Customer name")
+    customer_email: str | None = Field(None, max_length=255, description="Customer email address")
+    customer_mobile: str | None = Field(None, max_length=30, description="Customer mobile number")
     quantity: int = Field(..., gt=0, description="Number of units sold")
     unit_price: float = Field(..., gt=0, description="Sale price per unit")
 
@@ -22,6 +24,8 @@ class SaleResponse(BaseModel):
     vehicle_make: str
     vehicle_model: str
     customer_name: str
+    customer_email: str | None = None
+    customer_mobile: str | None = None
     quantity: int
     unit_price: float
     unit_cost: float

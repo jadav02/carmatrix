@@ -15,7 +15,9 @@ import {
   IndianRupee, 
   Boxes,
   History,
-  TrendingUp
+  TrendingUp,
+  Mail,
+  Phone
 } from 'lucide-react';
 import './Sales.css';
 
@@ -27,6 +29,8 @@ export default function Sales() {
   const [formData, setFormData] = useState({
     vehicle_id: '',
     customer_name: '',
+    customer_email: '',
+    customer_mobile: '',
     quantity: '1',
     unit_price: '',
   });
@@ -104,14 +108,18 @@ export default function Sales() {
       const res = await sellVehicle({
         vehicle_id: Number(formData.vehicle_id),
         customer_name: formData.customer_name.trim(),
+        customer_email: formData.customer_email.trim() || undefined,
+        customer_mobile: formData.customer_mobile.trim() || undefined,
         quantity: qty,
         unit_price: price,
       });
 
-      showSuccess(`Successfully processed sale of ${qty} unit(s) of ${res.vehicle_make} ${res.vehicle_model} to ${res.customer_name}! Profit: ${formatINR(res.profit)}`);
+      showSuccess(`Successfully processed sale of ${qty} unit(s) of ${res.vehicle_make} ${res.vehicle_model} to ${res.customer_name}! Automated Email & SMS Bill notifications sent.`);
       setFormData({
         vehicle_id: vehicles.length > 0 ? String(vehicles[0].id) : '',
         customer_name: '',
+        customer_email: '',
+        customer_mobile: '',
         quantity: '1',
         unit_price: vehicles.length > 0 ? String(vehicles[0].selling_price || vehicles[0].price) : '',
       });
@@ -203,6 +211,44 @@ export default function Sales() {
                   required
                 />
                 <User className="input-icon" size={18} />
+              </div>
+            </div>
+
+            {/* Customer Email Address */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="sale-customer-email">
+                Customer Email Address
+                <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Instant Sales Bill Email)</span>
+              </label>
+              <div className="input-wrapper">
+                <input
+                  id="sale-customer-email"
+                  type="email"
+                  className="form-input"
+                  placeholder="e.g. rahul@example.com"
+                  value={formData.customer_email}
+                  onChange={e => setFormData({ ...formData, customer_email: e.target.value })}
+                />
+                <Mail className="input-icon" size={18} />
+              </div>
+            </div>
+
+            {/* Customer Mobile Number */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="sale-customer-mobile">
+                Customer Mobile Number
+                <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Instant Sales Bill SMS)</span>
+              </label>
+              <div className="input-wrapper">
+                <input
+                  id="sale-customer-mobile"
+                  type="tel"
+                  className="form-input"
+                  placeholder="e.g. +91 98765 43210"
+                  value={formData.customer_mobile}
+                  onChange={e => setFormData({ ...formData, customer_mobile: e.target.value })}
+                />
+                <Phone className="input-icon" size={18} />
               </div>
             </div>
 

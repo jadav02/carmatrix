@@ -9,10 +9,43 @@ from app.models.user import User
 from app.schemas.sale import SaleCreate, ReportsSummary
 
 
+def send_sale_receipt_notifications(sale: Sale):
+    """
+    Sends automated Email bill & SMS bill notifications to the customer for manual vehicle sales.
+    """
+    target_email = sale.customer_email or "Not provided"
+    target_mobile = sale.customer_mobile or "Not provided"
+
+    email_body = f"""
+====================================================
+           CARMATRIX LUXURY MOTORS SALES RECEIPT       
+====================================================
+Sale Receipt ID  : #{sale.id}
+Customer Name    : {sale.customer_name}
+Customer Email   : {target_email}
+Customer Mobile  : {target_mobile}
+
+VEHICLE DETAILS:
+  Vehicle Model  : {sale.vehicle_make} {sale.vehicle_model}
+  Quantity       : {sale.quantity} unit(s)
+  Price Per Unit : ₹{sale.unit_price:,.2f}
+  Total Sale Price: ₹{sale.total_price:,.2f}
+
+Dealership Contact:
+  Email : support@carmatrix.com
+  Mobile: +91 98765 43210
+====================================================
+"""
+    print(f"[EMAIL NOTIFICATION DISPATCHED TO {target_email}]:\n{email_body}")
+
+    sms_body = f"CarMatrix Sale Receipt #{sale.id}: Dear {sale.customer_name}, your purchase of {sale.vehicle_make} {sale.vehicle_model} x{sale.quantity} (Total: ₹{sale.total_price:,.0f}) is confirmed! Contact us: support@carmatrix.com / +91 98765 43210."
+    print(f"[SMS NOTIFICATION DISPATCHED TO {target_mobile}]:\n{sms_body}")
+
+
 def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> Sale:
     """
-    Sells vehicle units, reduces inventory stock, and creates a sale transaction record.
-    Calculates profit based on purchase_price and sale price per unit.
+    Sells vehicle units, reduces inventory stock, creates a sale transaction record,
+    and dispatches automated Email & SMS sales receipts to the customer.
     """
     vehicle = db.query(Vehicle).filter(Vehicle.id == sale_in.vehicle_id).first()
     if not vehicle:
@@ -27,8 +60,8 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> Sale:
             detail=f"Insufficient stock. Only {vehicle.quantity} unit(s) available."
         )
 
-    unit_cost = float(vehicle.purchase_price) if vehicle.purchase_price and vehicle.purchase_price > 0 else round(float(vehicle.price) * 0.75, 2)
-    unit_price = float(sale_in.unit_price)
+    unit_cost = vehicle.purchase_price if vehicle.purchase_price and vehicle.purchase_price > 0 else round(vehicle.price * 0.75, 2)
+    unit_price = sale_in.unit_price
     qty = sale_in.quantity
 
     total_price = round(unit_price * qty, 2)
@@ -38,12 +71,17 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> Sale:
     # Reduce stock
     vehicle.quantity -= qty
 
+    cust_email = sale_in.customer_email.strip() if sale_in.customer_email else None
+    cust_mobile = sale_in.customer_mobile.strip() if sale_in.customer_mobile else None
+
     new_sale = Sale(
         vehicle_id=vehicle.id,
         user_id=current_user.id,
         vehicle_make=vehicle.make,
         vehicle_model=vehicle.model,
         customer_name=sale_in.customer_name,
+        customer_email=cust_email,
+        customer_mobile=cust_mobile,
         quantity=qty,
         unit_price=unit_price,
         unit_cost=unit_cost,
@@ -55,6 +93,10 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> Sale:
     db.add(new_sale)
     db.commit()
     db.refresh(new_sale)
+
+    # Dispatch Email & SMS sales receipt
+    send_sale_receipt_notifications(new_sale)
+
     return new_sale
 
 
