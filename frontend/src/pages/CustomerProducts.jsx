@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
 import { useCart } from '../context/CartContext';
-import { formatINR } from '../utils/formatters';
+import { formatINR, formatRestockDate } from '../utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -16,7 +16,8 @@ import {
   ArrowUpDown,
   Sparkles,
   Layers,
-  CreditCard
+  CreditCard,
+  Clock
 } from 'lucide-react';
 import './CustomerProducts.css';
 
@@ -37,7 +38,7 @@ export default function CustomerProducts() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getVehicles({ in_stock_only: true });
+      const data = await getVehicles();
       setVehicles(data || []);
     } catch (err) {
       setVehicles([]);
@@ -176,6 +177,13 @@ export default function CustomerProducts() {
                   <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
                     {v.quantity === 0 ? 'Out of Stock' : `${v.quantity} Units Available`}
                   </span>
+
+                  {v.quantity === 0 && v.restock_date && (
+                    <div className="restock-timeline-banner">
+                      <Clock size={15} className="restock-icon" />
+                      <span>Back in stock by <strong>{formatRestockDate(v.restock_date)}</strong></span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions: Add to Cart & Buy Now / Checkout */}

@@ -13,8 +13,8 @@ from app.schemas.vehicle import VehicleCreate, VehicleUpdate
 
 def _format_vehicle_response(vehicle: Vehicle) -> dict:
     """Helper to convert Vehicle ORM object to response dict with calculated unit profit."""
-    p_price = float(vehicle.purchase_price) if vehicle.purchase_price and vehicle.purchase_price > 0 else round(float(vehicle.price) * 0.75, 2)
-    s_price = float(vehicle.selling_price) if vehicle.selling_price and vehicle.selling_price > 0 else float(vehicle.price)
+    p_price = vehicle.purchase_price if vehicle.purchase_price and vehicle.purchase_price > 0 else round(vehicle.price * 0.75, 2)
+    s_price = vehicle.selling_price if vehicle.selling_price and vehicle.selling_price > 0 else vehicle.price
     price = s_price
     profit_per_unit = round(s_price - p_price, 2)
 
@@ -29,6 +29,7 @@ def _format_vehicle_response(vehicle: Vehicle) -> dict:
         "profit_per_unit": profit_per_unit,
         "quantity": vehicle.quantity,
         "image_url": vehicle.image_url,
+        "restock_date": vehicle.restock_date.isoformat() if vehicle.restock_date else None,
     }
 
 
@@ -36,8 +37,11 @@ def create_vehicle(db: Session, vehicle_in: VehicleCreate) -> dict:
     """
     Create a new vehicle record with purchase price and selling price.
     """
-    s_price = float(vehicle_in.selling_price if vehicle_in.selling_price is not None else (vehicle_in.price or 0.0))
-    p_price = float(vehicle_in.purchase_price if vehicle_in.purchase_price is not None else round(s_price * 0.75, 2))
+    s_price = vehicle_in.selling_price if vehicle_in.selling_price is not None else (vehicle_in.price or 0.0)
+    p_price = vehicle_in.purchase_price if vehicle_in.purchase_price is not None else round(s_price * 0.75, 2)
+
+    # Auto-clear restock_date if vehicle is being created with stock
+    restock_date = vehicle_in.restock_date if vehicle_in.quantity == 0 else None
 
     new_vehicle = Vehicle(
         make=vehicle_in.make,
@@ -48,6 +52,7 @@ def create_vehicle(db: Session, vehicle_in: VehicleCreate) -> dict:
         price=s_price,
         quantity=vehicle_in.quantity,
         image_url=vehicle_in.image_url,
+        restock_date=restock_date,
     )
 
     db.add(new_vehicle)
@@ -169,6 +174,14 @@ def update_vehicle(db: Session, vehicle_id: int, vehicle_in: VehicleUpdate) -> d
     for field in ["make", "model", "category", "quantity", "image_url"]:
         if field in update_data and update_data[field] is not None:
             setattr(vehicle, field, update_data[field])
+
+    # Handle restock_date: set it from payload if provided
+    if "restock_date" in update_data:
+        vehicle.restock_date = update_data["restock_date"]
+
+    # Auto-clear restock_date when vehicle is back in stock
+    if vehicle.quantity is not None and vehicle.quantity > 0:
+        vehicle.restock_date = None
 
     db.commit()
     db.refresh(vehicle)

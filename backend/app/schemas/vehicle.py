@@ -2,6 +2,7 @@
 # Vehicle Schemas
 # ==========================================
 
+from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -14,6 +15,7 @@ class VehicleCreate(BaseModel):
     price: float | None = Field(None, gt=0)
     quantity: int = Field(default=0, ge=0)
     image_url: str | None = Field(None, max_length=500)
+    restock_date: date | None = None
 
 
 class VehicleUpdate(BaseModel):
@@ -25,6 +27,7 @@ class VehicleUpdate(BaseModel):
     price: float | None = Field(None, gt=0)
     quantity: int | None = Field(None, ge=0)
     image_url: str | None = Field(None, max_length=500)
+    restock_date: date | None = None
 
 
 class VehicleResponse(BaseModel):
@@ -40,6 +43,7 @@ class VehicleResponse(BaseModel):
     profit_per_unit: float = 0.0
     quantity: int
     image_url: str | None = None
+    restock_date: str | None = None
 
 
 class InventorySummary(BaseModel):
@@ -49,3 +53,4 @@ class InventorySummary(BaseModel):
     total_purchase_cost: float = 0.0
     potential_total_profit: float = 0.0
     low_stock_count: int
+

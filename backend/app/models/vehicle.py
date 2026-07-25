@@ -2,7 +2,9 @@
 # Vehicle Database Model
 # ==========================================
 
-from sqlalchemy import Float, Integer, String
+import datetime
+
+from sqlalchemy import Date, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -24,3 +26,4 @@ class Vehicle(Base):
     price: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    restock_date: Mapped[datetime.date | None] = mapped_column(Date, nullable=True, default=None)

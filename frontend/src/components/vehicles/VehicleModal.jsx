@@ -2,7 +2,7 @@
 // Vehicle Add/Edit Modal Form with Purchase & Selling Price Profit Calculation
 // ==========================================
 import React, { useState, useEffect } from 'react';
-import { X, Save, Car, IndianRupee, Layers, Hash, AlertCircle, TrendingUp, Percent } from 'lucide-react';
+import { X, Save, Car, IndianRupee, Layers, Hash, AlertCircle, TrendingUp, Percent, Calendar } from 'lucide-react';
 import { formatINR } from '../../utils/formatters';
 import './VehicleModal.css';
 
@@ -18,6 +18,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
     purchase_price: '',
     selling_price: '',
     quantity: '0',
+    restock_date: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +40,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
         purchase_price: pPrice !== '' ? String(pPrice) : '',
         selling_price: sPrice !== '' ? String(sPrice) : '',
         quantity: vehicle.quantity !== undefined ? String(vehicle.quantity) : '0',
+        restock_date: vehicle.restock_date || '',
       });
     } else {
       setFormData({
@@ -48,6 +50,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
         purchase_price: '',
         selling_price: '',
         quantity: '0',
+        restock_date: '',
       });
     }
     setErrorMessage('');
@@ -103,6 +106,7 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
         selling_price: sPriceNum,
         price: sPriceNum,
         quantity: qtyNum,
+        restock_date: qtyNum === 0 ? (formData.restock_date || null) : null,
       });
       onClose();
     } catch (err) {
@@ -203,6 +207,27 @@ export default function VehicleModal({ isOpen, onClose, onSave, vehicle = null }
                 <Hash className="input-icon" size={18} />
               </div>
             </div>
+
+            {/* Expected Restock Date (Shown when quantity is 0) */}
+            {parseInt(formData.quantity || '0', 10) === 0 && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="restock-date">
+                  Expected Restock Date
+                  <span className="text-muted" style={{ fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Blinkit restock timeline)</span>
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    id="restock-date"
+                    type="date"
+                    name="restock_date"
+                    className="form-input"
+                    value={formData.restock_date}
+                    onChange={handleChange}
+                  />
+                  <Calendar className="input-icon text-indigo-400" size={18} />
+                </div>
+              </div>
+            )}
 
             {/* Purchase Price (Cost to Dealership) */}
             <div className="form-group">

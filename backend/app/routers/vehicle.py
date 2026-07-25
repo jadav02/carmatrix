@@ -92,9 +92,9 @@ def update_vehicle(
 def delete_vehicle(
     vehicle_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_inventory_manager),
+    current_user: User = Depends(require_admin),
 ):
     """
-    Delete a vehicle by ID (Administrator & Inventory Manager).
+    Delete a vehicle by ID (Administrator only).
     """
     return vehicle_service.delete_vehicle(db=db, vehicle_id=vehicle_id)

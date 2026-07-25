@@ -10,7 +10,7 @@ import {
   updateVehicle, 
   deleteVehicle 
 } from '../api/vehicles';
-import { formatINR } from '../utils/formatters';
+import { formatINR, formatRestockDate } from '../utils/formatters';
 import VehicleModal from '../components/vehicles/VehicleModal';
 import DeleteConfirmModal from '../components/vehicles/DeleteConfirmModal';
 import { 
@@ -353,7 +353,9 @@ export default function Vehicles() {
                       )}
                       <td>
                         <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
-                          {v.quantity === 0 ? 'Out of Stock (0)' : v.quantity <= 3 ? `Low Stock (${v.quantity})` : `${v.quantity} Units`}
+                          {v.quantity === 0 
+                            ? (v.restock_date ? `Out of Stock (Restock: ${formatRestockDate(v.restock_date)})` : 'Out of Stock (0)')
+                            : v.quantity <= 3 ? `Low Stock (${v.quantity})` : `${v.quantity} Units`}
                         </span>
                       </td>
                       {canAddEdit && (

@@ -88,6 +88,10 @@ def restock_vehicle(db: Session, request: InventoryRestockRequest) -> dict:
     previous_qty = vehicle.quantity
     vehicle.quantity += request.quantity
 
+    # Auto-clear restock_date once vehicle is back in stock
+    if vehicle.quantity > 0:
+        vehicle.restock_date = None
+
     db.commit()
     db.refresh(vehicle)
 

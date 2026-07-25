@@ -18,3 +18,21 @@ export function formatINR(amount) {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * Format ISO date string into readable restock date.
+ * Example: "2026-08-05" -> "Aug 5, 2026"
+ * @param {string} dateStr 
+ * @returns {string} Formatted date string
+ */
+export function formatRestockDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+

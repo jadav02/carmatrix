@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { getVehicles } from '../api/vehicles';
 import { purchaseStock, restockStock } from '../api/inventory';
-import { formatINR } from '../utils/formatters';
+import { formatINR, formatRestockDate } from '../utils/formatters';
 import { 
   Boxes, 
   ShoppingCart, 
@@ -376,7 +376,9 @@ export default function Inventory() {
                       </td>
                       <td>
                         <span className={`stock-badge ${v.quantity === 0 ? 'out' : v.quantity <= 3 ? 'low' : 'good'}`}>
-                          {v.quantity} Units {v.quantity === 0 ? '(Out of Stock)' : v.quantity <= 3 ? '(Low Stock)' : ''}
+                          {v.quantity === 0 
+                            ? (v.restock_date ? `Out of Stock (Restock: ${formatRestockDate(v.restock_date)})` : '0 Units (Out of Stock)')
+                            : `${v.quantity} Units ${v.quantity <= 3 ? '(Low Stock)' : ''}`}
                         </span>
                       </td>
                       <td className="col-actions">
